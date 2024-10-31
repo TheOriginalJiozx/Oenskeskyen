@@ -1,0 +1,36 @@
+nav {
+    background-color: #333;
+    color: white;
+    padding: 1rem;
+}
+
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+nav ul li {
+    margin-right: 20px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+button {
+    background-color: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    text-decoration: underline;
+}

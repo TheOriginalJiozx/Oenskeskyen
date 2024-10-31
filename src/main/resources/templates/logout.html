@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Out</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h2>Are you sure you want to sign out?</h2>
+    <form th:action="@{/logout}" method="post">
+        <div class="form-group">
+            <button type="submit" class="btn btn-danger">Sign Out</button>
+        </div>
+    </form>
+    <div class="form-group">
+        <a href="/" class="btn btn-secondary">Cancel</a>
+    </div>
+</div>
+</body>
+</html>

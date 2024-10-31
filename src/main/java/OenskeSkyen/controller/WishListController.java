@@ -18,7 +18,7 @@ import java.util.List;
 public class WishListController {
     private final WishListService wishListService;
     private final JdbcTemplate jdbcTemplate;
-    private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
+    private final PasswordEncoder passwordEncoder;
 
     public WishListController(WishListService wishListService, JdbcTemplate jdbcTemplate, PasswordEncoder passwordEncoder) {
         this.wishListService = wishListService;
@@ -29,21 +29,18 @@ public class WishListController {
     @GetMapping("/")
     public String showIndexPage(Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username;
-
-        if (auth != null && auth.isAuthenticated()) {
-            username = auth.getName();
-            model.addAttribute("username", username);
-        } else {
-
-            model.addAttribute("username", "Guest");
-        }
-
+        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+                ? auth.getName() : "Guest";
+        model.addAttribute("username", username);
         return "index";
     }
 
     @GetMapping("/login")
-    public String login() {
+    public String login(Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+                ? auth.getName() : "Guest";
+        model.addAttribute("username", username);
         return "login";
     }
 
@@ -75,20 +72,52 @@ public class WishListController {
         return "home";
     }
 
-    @GetMapping("/add")
+    @GetMapping("wishlist/view")
+    public String viewWishList(Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+                ? auth.getName() : "Guest";
+        model.addAttribute("username", username);
+
+        List<WishListItem> wishListItems = wishListService.getWishListItems();
+        model.addAttribute("wishListItems", wishListItems);
+        return "view";
+    }
+
+    @GetMapping("wishlist/add")
     public String addWishListItemForm(Model model) {
-        model.addAttribute("wishListItem", new WishListItem());
-        return "addWishListItem";
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+                ? auth.getName() : "Guest";
+        model.addAttribute("username", username);
+
+        String userIdQuery = "SELECT id FROM wish_users WHERE username = ?";
+        Integer userId = jdbcTemplate.queryForObject(userIdQuery, new Object[]{username}, Integer.class);
+
+        if (userId != null) {
+
+            List<WishListItem> wishListItems = wishListService.getWishListItems();
+            model.addAttribute("wishListItems", wishListItems);
+        } else {
+            model.addAttribute("wishListItems", List.of());
+        }
+
+        return "add";
     }
 
     @PostMapping("/add")
     public String addWishListItem(@ModelAttribute WishListItem wishListItem) {
         wishListService.addWishListItem(wishListItem.getItemName(), wishListItem.getDescription());
-        return "redirect:/home";
+        return "redirect:wishlist/view";
     }
 
     @GetMapping("/signup")
     public String showSignupForm(Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+                ? auth.getName() : "Guest";
+        model.addAttribute("username", username);
+
         model.addAttribute("user", new User());
         return "signup";
     }
@@ -98,7 +127,6 @@ public class WishListController {
         try {
             System.out.println("Attempting to register user: " + user.getUsername());
 
-            // Check if the user already exists
             String checkSql = "SELECT COUNT(*) FROM wish_users WHERE username = ?";
             Integer count = jdbcTemplate.queryForObject(checkSql, new Object[]{user.getUsername()}, Integer.class);
 

@@ -2,9 +2,45 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Sign Up</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}" />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/" th:href="@{/}">Wishlist</a>
+    <div class="collapse navbar-collapse">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/}">Home</a>
+            </li>
+            <li class="nav-item" th:if="${username == 'Guest'}">
+                <a class="nav-link" th:href="@{/login}">Login</a>
+            </li>
+            <li class="nav-item" th:if="${username == 'Guest'}">
+                <a class="nav-link" th:href="@{/signup}">Signup</a>
+            </li>
+            <li class="nav-item dropdown" th:if="${username != 'Guest'}">
+                <a class="nav-link dropdown-toggle" href="#" id="wishlistDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Wishlist
+                </a>
+                <div class="dropdown-menu" aria-labelledby="wishlistDropdown">
+                    <a class="dropdown-item" th:href="@{/wishlist/view}">View Wishlist</a>
+                    <a class="dropdown-item" th:href="@{/wishlist/add}">Add Item</a>
+                    <a class="dropdown-item" th:href="@{/wishlist/manage}">Manage Items</a>
+                </div>
+            </li>
+            <li class="nav-item" th:if="${username != 'Guest'}">
+                <form action="#" th:action="@{/logout}" method="post" style="display: inline;">
+                    <button class="btn btn-link nav-link" type="submit">Logout</button>
+                </form>
+            </li>
+        </ul>
+        <span class="navbar-text">
+            Welcome, <span th:text="${username}"></span>!
+        </span>
+    </div>
+</nav>
+
 <div class="container">
     <h1>Sign Up</h1>
     <form action="#" th:action="@{/signup}" th:object="${user}" method="post">
@@ -20,5 +56,26 @@
     </form>
     <p th:if="${message}" th:text="${message}"></p>
 </div>
+
+<div id="footer-placeholder"></div>
+
+<script>
+    window.onload = function() {
+
+        fetch('header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header-placeholder').innerHTML = data;
+            })
+            .catch(error => console.error('Error loading header:', error));
+
+        fetch('footer.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('footer-placeholder').innerHTML = data;
+            })
+            .catch(error => console.error('Error loading footer:', error));
+    };
+</script>
 </body>
 </html>

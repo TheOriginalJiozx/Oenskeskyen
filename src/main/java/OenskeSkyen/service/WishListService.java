@@ -31,7 +31,18 @@ public class WishListService {
 
     public List<WishListItem> getWishListItems() {
         Long userId = getCurrentUserId();
-        return userId != null ? wishListItemRepository.findByUserId(userId) : List.of();
+        if (userId == null) {
+
+            System.out.println("No user ID found; returning empty list.");
+            return List.of();
+        }
+        try {
+            return wishListItemRepository.findByUserId(userId);
+        } catch (Exception e) {
+
+            System.out.println("Error fetching wishlist items: " + e.getMessage());
+            return List.of();
+        }
     }
 
     public WishListItem addWishListItem(String itemName, String description) {
@@ -39,13 +50,10 @@ public class WishListService {
         item.setItemName(itemName);
         item.setDescription(description);
 
-        // Get the current user ID
         Long currentUserId = getCurrentUserId();
 
-        // Set the user ID in the item instead of the User object
         item.setUserId(currentUserId);
 
-        // Save the item using your wishListItemRepository
         return wishListItemRepository.save(item);
     }
 }

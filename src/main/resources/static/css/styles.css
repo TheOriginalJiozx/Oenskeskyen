@@ -1,36 +1,19 @@
-nav {
-    background-color: #333;
-    color: white;
-    padding: 1rem;
-}
-
-nav ul {
-    list-style-type: none;
+html, body {
+    height: 100%;
     margin: 0;
-    padding: 0;
+}
+
+body {
     display: flex;
+    flex-direction: column;
 }
 
-nav ul li {
-    margin-right: 20px;
+.container {
+    flex: 1;
 }
 
-nav ul li a {
-    color: white;
-    text-decoration: none;
-}
-
-nav ul li a:hover {
-    text-decoration: underline;
-}
-
-button {
-    background-color: transparent;
-    border: none;
-    color: white;
-    cursor: pointer;
-}
-
-button:hover {
-    text-decoration: underline;
+footer {
+    background-color: #f8f9fa;
+    padding: 20px 0;
+    text-align: center;
 }

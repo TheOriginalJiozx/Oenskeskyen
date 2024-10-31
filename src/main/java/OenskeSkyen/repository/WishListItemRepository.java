@@ -19,29 +19,25 @@ public class WishListItemRepository {
     }
 
     public WishListItem save(WishListItem item) {
-        String sql = "INSERT INTO wish_list_items (item_name, description, user_id) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO wishlist_items (item_name, item_description, user_id) VALUES (?, ?, ?)";
         jdbcTemplate.update(sql, item.getItemName(), item.getDescription(), item.getUserId());
 
-        // Optionally, you can retrieve the inserted item or its ID if needed
-        return item; // Return the item or adjust as needed
+        return item;
     }
 
-    // Method to find all WishListItems by user ID
     public List<WishListItem> findByUserId(Long userId) {
-        String sql = "SELECT * FROM wish_list_items WHERE user_id = ?";
+        String sql = "SELECT * FROM wishlist_items WHERE user_id = ?";
         return jdbcTemplate.query(sql, new Object[]{userId}, new WishListItemRowMapper());
     }
 
-    // Inner class to map ResultSet to WishListItem
     private static class WishListItemRowMapper implements RowMapper<WishListItem> {
         @Override
         public WishListItem mapRow(ResultSet rs, int rowNum) throws SQLException {
             WishListItem item = new WishListItem();
-            item.setId(rs.getLong("id")); // Make sure the WishListItem class has an 'id' field
+            item.setId(rs.getLong("id"));
             item.setItemName(rs.getString("item_name"));
-            item.setDescription(rs.getString("description"));
-            // Assuming your WishListItem has a User field; you'll need to set that if required
-            // item.setUser(user); // You may need to retrieve the user based on user ID
+            item.setDescription(rs.getString("item_description"));
+
             return item;
         }
     }

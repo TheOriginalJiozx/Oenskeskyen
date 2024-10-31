@@ -31,7 +31,7 @@ public class SecurityConfig {
     private String dbPassword;
 
     @Bean
-    @Profile("h2")  // H2 configuration
+    @Profile("h2")
     public DataSource h2DataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.h2.Driver");
@@ -50,9 +50,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/", "/h2-console/**").permitAll() // Allow unauthenticated access to home and signup
-                        .requestMatchers("/login", "/signup").anonymous() // Only allow unauthenticated users to access login
-                        .anyRequest().authenticated() // All other requests need authentication
+                        .requestMatchers("/", "/header.html", "/footer.html", "/h2-console/**", "/css/**").permitAll()
+                        .requestMatchers("/login", "/signup").anonymous()
+                        .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")

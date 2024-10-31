@@ -1,16 +1,3 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>My Wishlist</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" th:href="@{/css/styles.css}" /> <!-- Correctly link the CSS file -->
-</head>
-<body>
-
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="/" th:href="@{/}">Wishlist</a>
     <div class="collapse navbar-collapse">
@@ -45,23 +32,3 @@
         </span>
     </div>
 </nav>
-
-<div class="container">
-    <h1>Welcome to the Wishlist Application</h1>
-    <p>Manage your wishes and share them with others!</p>
-</div>
-
-<div id="footer-placeholder"></div>
-
-<script>
-    window.onload = function() {
-        fetch('footer.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('footer-placeholder').innerHTML = data;
-            })
-            .catch(error => console.error('Error loading footer:', error));
-    };
-</script>
-</body>
-</html>

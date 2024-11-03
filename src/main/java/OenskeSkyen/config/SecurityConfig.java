@@ -63,7 +63,7 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login?logout")
                 )
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/h2-console/**")
+                        .ignoringRequestMatchers("/h2-console/**", "/wishlist/add")
                 )
                 .headers(headers -> headers
                         .frameOptions().sameOrigin()

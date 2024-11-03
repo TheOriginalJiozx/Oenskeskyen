@@ -41,8 +41,9 @@
         </span>
     </div>
 </nav>
-<div class="container">
-    <h2>Login</h2>
+
+<div class="container container-custom">
+    <h1>Welcome, <span th:text="${username}"></span>!</h1>
     <form th:action="@{/login}" method="post">
         <div class="form-group">
             <label for="username">Username</label>

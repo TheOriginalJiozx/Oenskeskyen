@@ -1,10 +1,10 @@
 package OenskeSkyen.model;
 
-public class WishListItem {
+public class WishItem {
     private Long id;
     private String itemName;
     private String description;
-    private Long userId;
+    private String category;
     private Double price;
     private Integer quantity;
 
@@ -32,20 +32,20 @@ public class WishListItem {
         this.description = description;
     }
 
-    public Long getUserId() {
-        return userId;
+    public String getCategory() {
+        return category;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public Double getPrice() {
         return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
     }
 
     public void setQuantity(Integer quantity) {

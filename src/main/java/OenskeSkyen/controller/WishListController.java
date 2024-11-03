@@ -1,6 +1,8 @@
 package OenskeSkyen.controller;
 
+import OenskeSkyen.model.Category;
 import OenskeSkyen.model.User;
+import OenskeSkyen.model.WishItem;
 import OenskeSkyen.model.WishListItem;
 import OenskeSkyen.service.WishListService;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,29 +28,27 @@ public class WishListController {
         this.passwordEncoder = passwordEncoder;
     }
 
+    private String getAuthenticatedUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+                ? auth.getName() : "Guest";
+    }
+
     @GetMapping("/")
     public String showIndexPage(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
-                ? auth.getName() : "Guest";
-        model.addAttribute("username", username);
+        model.addAttribute("username", getAuthenticatedUsername());
         return "index";
     }
 
     @GetMapping("/login")
     public String login(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
-                ? auth.getName() : "Guest";
-        model.addAttribute("username", username);
+        model.addAttribute("username", getAuthenticatedUsername());
         return "login";
     }
 
     @PostMapping("/login")
     public String doLogin(@RequestParam String username, @RequestParam String password) {
-
         System.out.println("Attempting login for user: " + username);
-
         return "redirect:/";
     }
 
@@ -59,9 +59,7 @@ public class WishListController {
 
     @PostMapping("/logout")
     public String doLogout(@RequestParam String username, @RequestParam String password) {
-
         System.out.println("Attempting logout for user: " + username);
-
         return "redirect:/";
     }
 
@@ -73,51 +71,113 @@ public class WishListController {
     }
 
     @GetMapping("wishlist/view")
-    public String viewWishList(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
-                ? auth.getName() : "Guest";
-        model.addAttribute("username", username);
+    public String viewWishList(@RequestParam(required = false) String user, Model model) {
+        String authenticatedUsername = getAuthenticatedUsername();
 
-        List<WishListItem> wishListItems = wishListService.getWishListItems();
+        if (user == null || user.isEmpty()) {
+            return "redirect:/wishlist/view?user=" + authenticatedUsername;
+        }
+
+        model.addAttribute("username", authenticatedUsername);
+
+        List<WishListItem> wishListItems = wishListService.getWishListItemsForUser(user);
         model.addAttribute("wishListItems", wishListItems);
+
         return "view";
     }
 
     @GetMapping("wishlist/add")
-    public String addWishListItemForm(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
-                ? auth.getName() : "Guest";
+    public String addWishListItemForm(@RequestParam(required = false) String selectedCategory, Model model) {
+        String username = getAuthenticatedUsername();
         model.addAttribute("username", username);
 
-        String userIdQuery = "SELECT id FROM wish_users WHERE username = ?";
-        Integer userId = jdbcTemplate.queryForObject(userIdQuery, new Object[]{username}, Integer.class);
+        Integer userId = jdbcTemplate.queryForObject("SELECT id FROM wish_users WHERE username = ?", new Object[]{username}, Integer.class);
+        model.addAttribute("categories", wishListService.getAllCategories());
 
-        if (userId != null) {
+        List<WishItem> wishItems = List.of();
 
-            List<WishListItem> wishListItems = wishListService.getWishListItems();
-            model.addAttribute("wishListItems", wishListItems);
-        } else {
-            model.addAttribute("wishListItems", List.of());
+        if (selectedCategory != null && !selectedCategory.isEmpty()) {
+            wishItems = jdbcTemplate.query("SELECT * FROM wish_items WHERE category = (SELECT category_name FROM item_categories WHERE category_name = ?)",
+                    new Object[]{selectedCategory}, (rs, rowNum) -> {
+                        WishItem item = new WishItem();
+                        item.setId(rs.getLong("id"));
+                        item.setItemName(rs.getString("item_name"));
+                        item.setDescription(rs.getString("item_description"));
+                        item.setPrice(rs.getDouble("price"));
+                        item.setQuantity(rs.getInt("stock_quantity"));
+                        return item;
+                    });
         }
 
+        model.addAttribute("wishItems", wishItems);
         return "add";
     }
 
-    @PostMapping("/add")
-    public String addWishListItem(@ModelAttribute WishListItem wishListItem) {
-        wishListService.addWishListItem(wishListItem.getItemName(), wishListItem.getDescription());
-        return "redirect:wishlist/view";
+    @GetMapping("/wishlist/items")
+    @ResponseBody
+    public List<WishItem> getItemsByCategory(@RequestParam String category) {
+        return jdbcTemplate.query("SELECT * FROM wish_items WHERE category = ?",
+                new Object[]{category}, (rs, rowNum) -> {
+                    WishItem item = new WishItem();
+                    item.setId(rs.getLong("id"));
+                    item.setItemName(rs.getString("item_name"));
+                    item.setDescription(rs.getString("item_description"));
+                    item.setPrice(rs.getDouble("price"));
+                    item.setQuantity(rs.getInt("stock_quantity"));
+                    return item;
+                });
+    }
+
+    @PostMapping("/wishlist/add")
+    @ResponseBody
+    public String addWishListItem(@RequestParam Long itemId, @RequestParam int quantity) {
+        WishItem item = jdbcTemplate.queryForObject(
+                "SELECT item_name, item_description, price, stock_quantity FROM wish_items WHERE id = ?",
+                new Object[]{itemId},
+                (rs, rowNum) -> {
+                    WishItem wishItem = new WishItem();
+                    wishItem.setItemName(rs.getString("item_name"));
+                    wishItem.setDescription(rs.getString("item_description"));
+                    wishItem.setPrice(rs.getDouble("price"));
+                    wishItem.setQuantity(rs.getInt("stock_quantity"));
+                    return wishItem;
+                }
+        );
+
+        if (item == null) {
+            return "Error: Item does not exist.";
+        }
+
+        Long userId = wishListService.getCurrentUserId();
+        if (userId == null) {
+            return "Error: User not authenticated.";
+        }
+
+        if (item.getQuantity() >= quantity) {
+            int rowsInserted = jdbcTemplate.update(
+                    "INSERT INTO wishlist_items (item_name, item_description, price, user_id) VALUES (?, ?, ?, ?)",
+                    item.getItemName(), item.getDescription(), item.getPrice(), userId
+            );
+
+            jdbcTemplate.update(
+                    "UPDATE wish_items SET stock_quantity = stock_quantity - ? WHERE id = ?",
+                    quantity, itemId
+            );
+
+            return rowsInserted > 0 ? "Item added to wishlist successfully!" : "Failed to add item to wishlist.";
+        } else {
+            int rowsReserved = jdbcTemplate.update(
+                    "INSERT INTO reserved_items (item_name, amount, user_id) VALUES (?, ?, ?)",
+                    item.getItemName(), quantity, userId
+            );
+
+            return rowsReserved > 0 ? "Item reserved successfully!" : "Failed to reserve item.";
+        }
     }
 
     @GetMapping("/signup")
     public String showSignupForm(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
-                ? auth.getName() : "Guest";
-        model.addAttribute("username", username);
-
+        model.addAttribute("username", getAuthenticatedUsername());
         model.addAttribute("user", new User());
         return "signup";
     }

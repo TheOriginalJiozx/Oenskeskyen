@@ -45,27 +45,43 @@
         </span>
     </div>
 </nav>
+
 <div class="container">
-<div th:if="${wishListItems.isEmpty()}">
-    <div class="container">
+    <div th:if="${wishListItems.isEmpty()}">
         <h1>My Wishlist</h1>
         <p>No wishlist items available.</p>
     </div>
-</div>
-<div th:each="item : ${wishListItems}">
-    <div class="container">
+    <div th:each="item : ${wishListItems}">
         <h1>My Wishlist</h1>
         Item Name: <p th:text="${item.itemName}"></p>
         Item Description: <p th:text="${item.description}"></p>
+        Item Price: <p th:text="${#numbers.formatDecimal(item.price, 0, item.price % 1 == 0 ? 0 : 2).replace(',', '.') + ' kr.'}"></p>
+    </div>
+
+    <div class="share-button mt-3">
+        <button class="btn btn-info" id="shareWishlistButton">Share My Wishlist</button>
     </div>
 </div>
-</div>
+
+<script>
+    document.getElementById('shareWishlistButton').onclick = function() {
+        const username = /*[[${username}]]*/ '';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const userParam = urlParams.get('user');
+
+        const shareUsername = userParam && userParam.trim() !== '' ? userParam : username;
+
+        const shareLink = `http://localhost:8080/wishlist/view?user=${shareUsername}`;
+
+        prompt("Share this link:", shareLink);
+    };
+</script>
 
 <div id="footer-placeholder"></div>
 
 <script>
     window.onload = function() {
-
         fetch('../footer.html')
             .then(response => response.text())
             .then(data => {

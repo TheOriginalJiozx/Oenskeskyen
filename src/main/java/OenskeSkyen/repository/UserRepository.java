@@ -23,19 +23,4 @@ public class UserRepository {
         String sql = "SELECT * FROM wish_users WHERE username = ?";
         return jdbcTemplate.queryForObject(sql, new Object[]{username}, new UserRowMapper());
     }
-
-    public Optional<User> findById(Long id) {
-        String sql = "SELECT * FROM wish_users WHERE id = ?";
-        try {
-            User user = jdbcTemplate.queryForObject(sql, new Object[]{id}, new UserRowMapper());
-            return Optional.of(user);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
-    public List<User> findAll() {
-        String sql = "SELECT * FROM wish_users";
-        return jdbcTemplate.query(sql, new UserRowMapper());
-    }
 }

@@ -13,7 +13,45 @@ body {
 }
 
 footer {
-    background-color: #f8f9fa;
     padding: 20px 0;
-    text-align: center;
+}
+
+footer p {
+    margin: 5px 0;
+    font-size: 1rem;
+}
+
+/* Adjust the width of the container */
+.container-custom {
+    margin-top: 50px;
+    margin-left: auto; /* Center align */
+    margin-right: auto; /* Center align */
+}
+
+/* Center-align and set max width for form elements */
+.container-custom form .form-group,
+.container-custom h1 {
+    max-width: 400px; /* Set a uniform width */
+    margin-left: auto; /* Center align */
+    margin-right: auto; /* Center align */
+    text-align: left; /* Align text within the centered container */
+}
+
+.container-custom form button {
+    max-width: 200px; /* Set a specific width for the button */
+    margin-left: calc(50% - 200px); /* Align button left under the form fields */
+    margin-top: 10px; /* Space above the button */
+    text-align: center; /* Center-align text within the button */
+}
+
+/* Ensure form controls (input fields) fit within the max-width */
+.container-custom form .form-control {
+    width: 100%; /* Full width within the form group */
+}
+
+/* Button specific styling to match width */
+.container-custom form button {
+    display: block; /* Forces button to occupy full width of max-width container */
+    width: 100%; /* Full width within max-width */
+    margin-top: 20px; /* Add space above the button */
 }

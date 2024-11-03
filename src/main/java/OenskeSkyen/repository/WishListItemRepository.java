@@ -2,7 +2,6 @@ package OenskeSkyen.repository;
 
 import OenskeSkyen.model.Category;
 import OenskeSkyen.model.WishListItem;
-import OenskeSkyen.model.WishItem;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;

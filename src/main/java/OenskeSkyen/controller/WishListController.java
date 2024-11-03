@@ -124,6 +124,7 @@ public class WishListController {
                     item.setDescription(rs.getString("item_description"));
                     item.setPrice(rs.getDouble("price"));
                     item.setQuantity(rs.getInt("stock_quantity"));
+                    System.out.println("Fetched Item: " + item.getItemName() + ", Quantity: " + item.getQuantity());
                     return item;
                 });
     }

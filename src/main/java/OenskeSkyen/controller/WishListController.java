@@ -4,6 +4,7 @@ import OenskeSkyen.model.Category;
 import OenskeSkyen.model.User;
 import OenskeSkyen.model.WishItem;
 import OenskeSkyen.model.WishListItem;
+import OenskeSkyen.repository.WishListItemRepository;
 import OenskeSkyen.service.WishListService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
@@ -13,7 +14,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/")
@@ -21,11 +24,13 @@ public class WishListController {
     private final WishListService wishListService;
     private final JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
+    private final WishListItemRepository wishListItemRepository;
 
-    public WishListController(WishListService wishListService, JdbcTemplate jdbcTemplate, PasswordEncoder passwordEncoder) {
+    public WishListController(WishListService wishListService, JdbcTemplate jdbcTemplate, PasswordEncoder passwordEncoder, WishListItemRepository wishListItemRepository) {
         this.wishListService = wishListService;
         this.jdbcTemplate = jdbcTemplate;
         this.passwordEncoder = passwordEncoder;
+        this.wishListItemRepository = wishListItemRepository;
     }
 
     private String getAuthenticatedUsername() {
@@ -104,7 +109,6 @@ public class WishListController {
                         item.setItemName(rs.getString("item_name"));
                         item.setDescription(rs.getString("item_description"));
                         item.setPrice(rs.getDouble("price"));
-                        item.setQuantity(rs.getInt("stock_quantity"));
                         return item;
                     });
         }
@@ -115,73 +119,62 @@ public class WishListController {
 
     @GetMapping("/wishlist/items")
     @ResponseBody
-    public List<WishItem> getItemsByCategory(@RequestParam String category) {
-        return jdbcTemplate.query("SELECT * FROM wish_items WHERE category = ?",
-                new Object[]{category}, (rs, rowNum) -> {
-                    WishItem item = new WishItem();
-                    item.setId(rs.getLong("id"));
-                    item.setItemName(rs.getString("item_name"));
-                    item.setDescription(rs.getString("item_description"));
-                    item.setPrice(rs.getDouble("price"));
-                    item.setQuantity(rs.getInt("stock_quantity"));
-                    System.out.println("Fetched Item: " + item.getItemName() + ", Quantity: " + item.getQuantity());
-                    return item;
-                });
+    public List<WishItem> getItemsByCategory(@RequestParam(required = false) String category) {
+        String sql = "SELECT * FROM wish_items";
+        List<Object> params = new ArrayList<>();
+
+        if (category != null && !category.isEmpty()) {
+            sql += " WHERE category = ?";
+            params.add(category);
+        }
+
+        return jdbcTemplate.query(sql, params.toArray(), (rs, rowNum) -> {
+            WishItem item = new WishItem();
+            item.setId(rs.getLong("id"));
+            item.setItemName(rs.getString("item_name"));
+            item.setDescription(rs.getString("item_description"));
+            item.setPrice(rs.getDouble("price"));
+            return item;
+        });
     }
 
     @PostMapping("/wishlist/add")
     @ResponseBody
-    public String addWishListItem(@RequestParam Long itemId, @RequestParam int quantity, @RequestParam int donationAmount) {
-        WishItem item = jdbcTemplate.queryForObject(
-                "SELECT item_name, item_description, price, stock_quantity FROM wish_items WHERE id = ?",
+    public String addWishListItem(@RequestParam Long itemId, @RequestParam int donationAmount) {
+        Long userId = wishListService.getCurrentUserId();
+        if (userId == null) {
+            return "Error: User not authenticated.";
+        }
+
+        // Add the item to the wishlist
+        WishItem itemToAdd = jdbcTemplate.queryForObject(
+                "SELECT item_name, item_description, price FROM wish_items WHERE id = ?",
                 new Object[]{itemId},
                 (rs, rowNum) -> {
                     WishItem wishItem = new WishItem();
                     wishItem.setItemName(rs.getString("item_name"));
                     wishItem.setDescription(rs.getString("item_description"));
                     wishItem.setPrice(rs.getDouble("price"));
-                    wishItem.setQuantity(rs.getInt("stock_quantity"));
                     return wishItem;
                 }
         );
 
-        if (item == null) {
+        if (itemToAdd == null) {
             return "Error: Item does not exist.";
         }
 
-        Long userId = wishListService.getCurrentUserId();
-        if (userId == null) {
-            return "Error: User not authenticated.";
-        }
-
-        String responseMessage;
         boolean success = false;
+        String responseMessage;
 
         try {
-            if (item.getQuantity() >= quantity) {
-                int rowsInserted = jdbcTemplate.update(
-                        "INSERT INTO wishlist_items (item_name, item_description, price, user_id) VALUES (?, ?, ?, ?)",
-                        item.getItemName(), item.getDescription(), item.getPrice(), userId
-                );
+            int rowsInserted = jdbcTemplate.update(
+                    "INSERT INTO wishlist_items (item_name, item_description, price, user_id, is_reserved) VALUES (?, ?, ?, ?, 0)",
+                    itemToAdd.getItemName(), itemToAdd.getDescription(), itemToAdd.getPrice(), userId
+            );
 
-                jdbcTemplate.update(
-                        "UPDATE wish_items SET stock_quantity = stock_quantity - ? WHERE id = ?",
-                        quantity, itemId
-                );
+            success = rowsInserted > 0;
+            responseMessage = success ? "Item added to wishlist successfully!" : "Failed to add item to wishlist.";
 
-                success = rowsInserted > 0;
-                responseMessage = success ? "Item added to wishlist successfully!" : "Failed to add item to wishlist.";
-            } else {
-                int rowsReserved = jdbcTemplate.update(
-                        "INSERT INTO reserved_items (item_name, amount, user_id) VALUES (?, ?, ?)",
-                        item.getItemName(), quantity, userId
-                );
-
-                success = rowsReserved > 0;
-                responseMessage = success ? "Item reserved successfully!" : "Failed to reserve item.";
-            }
-
-            // Update times_donated if a donation was made
             if (donationAmount > 0) {
                 int rowsUpdated = jdbcTemplate.update(
                         "UPDATE wish_users SET times_donated = times_donated + 1 WHERE id = ?",
@@ -189,17 +182,64 @@ public class WishListController {
                 );
 
                 if (rowsUpdated <= 0) {
-                    // If no rows were updated, log a message
-                    System.out.println("No update occurred for times_donated for user_id: " + userId);
+                    System.out.println("No update occurred for times_donated for id: " + userId);
                 }
             }
         } catch (Exception e) {
-            // Log the exception
             e.printStackTrace();
             responseMessage = "Error: " + e.getMessage();
         }
 
         return responseMessage;
+    }
+
+    @PostMapping("/wishlist/reserve")
+    @ResponseBody
+    public String reserveItem(@RequestParam Long itemId) {
+        Long userId = wishListService.getCurrentUserId();
+        if (userId == null) {
+            return "Error: User not authenticated.";
+        }
+
+        // Check if the item is already reserved
+        WishListItem item = jdbcTemplate.queryForObject(
+                "SELECT id, is_reserved FROM wishlist_items WHERE id = ?",
+                new Object[]{itemId},
+                (rs, rowNum) -> {
+                    WishListItem wishListItem = new WishListItem();
+                    wishListItem.setId(rs.getLong("id"));
+                    wishListItem.setIsReserved(rs.getInt("is_reserved"));
+                    return wishListItem;
+                }
+        );
+
+        if (item == null) {
+            return "Error: Item does not exist.";
+        }
+
+        if (item.getIsReserved() == 1) {
+            return "Error: Item is already reserved.";
+        }
+
+        // Reserve the item
+        int rowsUpdated = jdbcTemplate.update(
+                "UPDATE wishlist_items SET is_reserved = 1 WHERE id = ?",
+                itemId
+        );
+
+        return (rowsUpdated > 0) ? "Item reserved successfully!" : "Error reserving item.";
+    }
+
+    @PostMapping("/wishlist/unreserve")
+    @ResponseBody
+    public String unreserveItem(@RequestBody Map<String, Long> request) {
+        Long itemId = request.get("itemId");
+        Long userId = wishListService.getCurrentUserId(); // Get user ID
+
+        // Fix: Call unreserveItem with both itemId and userId
+        boolean success = wishListItemRepository.unreserveItem(itemId);
+
+        return success ? "Item unreserved successfully" : "Error unreserving item";
     }
 
     @GetMapping("/signup")

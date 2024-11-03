@@ -3,47 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <title>My Wishlist</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <link rel="stylesheet" th:href="@{/css/styles.css}" />
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="/" th:href="@{/}">Wishlist</a>
-    <div class="collapse navbar-collapse">
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item">
-                <a class="nav-link" th:href="@{/}">Home</a>
-            </li>
-            <li class="nav-item" th:if="${username == 'Guest'}">
-                <a class="nav-link" th:href="@{/login}">Login</a>
-            </li>
-            <li class="nav-item" th:if="${username == 'Guest'}">
-                <a class="nav-link" th:href="@{/signup}">Signup</a>
-            </li>
-            <li class="nav-item dropdown" th:if="${username != 'Guest'}">
-                <a class="nav-link dropdown-toggle" href="#" id="wishlistDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Wishlist
-                </a>
-                <div class="dropdown-menu" aria-labelledby="wishlistDropdown">
-                    <a class="dropdown-item" th:href="@{/wishlist/view}">View Wishlist</a>
-                    <a class="dropdown-item" th:href="@{/wishlist/add}">Add Item</a>
-                    <a class="dropdown-item" th:href="@{/wishlist/manage}">Manage Items</a>
-                </div>
-            </li>
-            <li class="nav-item" th:if="${username != 'Guest'}">
+<nav class="navbar">
+    <div class="navbar-left">
+        <a href="/" th:href="@{/}" class="navbar-logo">Wishlist</a>
+        <div class="navbar-links">
+            <a class="nav-link" th:href="@{/}">Home</a>
+            <a class="nav-link" th:href="@{/login}" th:if="${username == 'Guest'}">Login</a>
+            <a class="nav-link" th:href="@{/signup}" th:if="${username == 'Guest'}">Signup</a>
+            <ul class="nav-dropdown">
+                <li class="nav-item dropdown" th:if="${username != 'Guest'}">
+                    <a class="nav-link dropdown-toggle" href="#" id="wishlistDropdown" onclick="toggleDropdown(event)">
+                        Wishlist <span class="arrow">&#x25BC;</span>
+                    </a>
+                    <div class="dropdown-menu" id="wishlistDropdownMenu">
+                        <a class="dropdown-item" th:href="@{/wishlist/view}">View Wishlist</a>
+                        <a class="dropdown-item" th:href="@{/wishlist/add}">Add Item</a>
+                        <a class="dropdown-item" th:href="@{/wishlist/manage}">Manage Items</a>
+                    </div>
+                </li>
+            </ul>
+            <span class="nav-link" th:if="${username != 'Guest'}">
                 <form action="#" th:action="@{/logout}" method="post" style="display: inline;">
-                    <button class="btn btn-link nav-link" type="submit">Logout</button>
+                    <a href="#" onclick="event.preventDefault(); this.closest('form').submit();" class="logout-link">Logout</a>
                 </form>
-            </li>
-        </ul>
-        <span class="navbar-text">
-            Welcome, <span th:text="${username}"></span>!
-        </span>
+            </span>
+        </div>
     </div>
+    <span class="welcome-message" th:if="${username != 'Guest'}">Welcome, <span th:text="${username}"></span>!</span>
 </nav>
 
 <div class="container">
@@ -52,6 +44,23 @@
 </div>
 
 <div id="footer-placeholder"></div>
+
+<script>
+    function toggleDropdown(event) {
+        event.preventDefault();
+        const dropdownMenu = document.getElementById('wishlistDropdownMenu');
+        dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    window.onclick = function(event) {
+        if (!event.target.matches('.nav-link.dropdown-toggle')) {
+            const dropdowns = document.getElementsByClassName('dropdown-menu');
+            for (let i = 0; i < dropdowns.length; i++) {
+                dropdowns[i].style.display = 'none';
+            }
+        }
+    }
+</script>
 
 <script>
     window.onload = function() {

@@ -3,204 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <title>Add To Wishlist</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <link rel="stylesheet" th:href="@{/css/styles.css}" />
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="/" th:href="@{/}">Wishlist</a>
-    <div class="collapse navbar-collapse">
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item">
-                <a class="nav-link" th:href="@{/}">Home</a>
-            </li>
-            <li class="nav-item" th:if="${username == 'Guest'}">
-                <a class="nav-link" th:href="@{/login}">Login</a>
-            </li>
-            <li class="nav-item" th:if="${username == 'Guest'}">
-                <a class="nav-link" th:href="@{/signup}">Signup</a>
-            </li>
-            <li class="nav-item dropdown" th:if="${username != 'Guest'}">
-                <a class="nav-link dropdown-toggle" href="#" id="wishlistDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Wishlist
-                </a>
-                <div class="dropdown-menu" aria-labelledby="wishlistDropdown">
-                    <a class="dropdown-item" th:href="@{/wishlist/view}">View Wishlist</a>
-                    <a class="dropdown-item" th:href="@{/wishlist/add}">Add Item</a>
-                    <a class="dropdown-item" th:href="@{/wishlist/manage}">Manage Items</a>
-                </div>
-            </li>
-            <li class="nav-item" th:if="${username != 'Guest'}">
+<nav class="navbar">
+    <div class="navbar-left">
+        <a href="/" th:href="@{/}" class="navbar-logo">Wishlist</a>
+        <div class="navbar-links">
+            <a class="nav-link" th:href="@{/}">Home</a>
+            <a class="nav-link" th:href="@{/login}" th:if="${username == 'Guest'}">Login</a>
+            <a class="nav-link" th:href="@{/signup}" th:if="${username == 'Guest'}">Signup</a>
+            <ul class="nav-dropdown">
+                <li class="nav-item dropdown" th:if="${username != 'Guest'}">
+                    <a class="nav-link dropdown-toggle" href="#" id="wishlistDropdown" onclick="toggleDropdown(event)">
+                        Wishlist <span class="arrow">&#x25BC;</span>
+                    </a>
+                    <div class="dropdown-menu" id="wishlistDropdownMenu">
+                        <a class="dropdown-item" th:href="@{/wishlist/view}">View Wishlist</a>
+                        <a class="dropdown-item" th:href="@{/wishlist/add}">Add Item</a>
+                        <a class="dropdown-item" th:href="@{/wishlist/manage}">Manage Items</a>
+                    </div>
+                </li>
+            </ul>
+            <span class="nav-link" th:if="${username != 'Guest'}">
                 <form action="#" th:action="@{/logout}" method="post" style="display: inline;">
-                    <button class="btn btn-link nav-link" type="submit">Logout</button>
+                    <a href="#" onclick="event.preventDefault(); this.closest('form').submit();" class="logout-link">Logout</a>
                 </form>
-            </li>
-        </ul>
-        <span class="navbar-text">
-            Welcome, <span th:text="${username}"></span>!
-        </span>
+            </span>
+        </div>
     </div>
+    <span class="welcome-message" th:if="${username != 'Guest'}">Welcome, <span th:text="${username}"></span>!</span>
 </nav>
 
 <div class="container">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-3 bg-light p-3">
+    <div class="row">
+        <div class="col-md-3 category-list">
+            <ul class="list-group">
                 <h4>Select Category</h4>
-                <ul class="list-group">
-                    <li class="list-group-item list-group-item-action" th:each="category : ${categories}"
-                        th:data-category-name="${category.name}" onclick="loadItemsByCategory(this)">
-                        <span th:text="${category.name}"></span>
-                    </li>
-                </ul>
-            </div>
+                <li class="category-item" th:each="category : ${categories}"
+                    th:data-category-name="${category.name}" onclick="loadItemsByCategory(this)">
+                    <span th:text="${category.name}"></span>
+                </li>
+            </ul>
+        </div>
 
-            <div class="col-md-9 p-3">
-                <h4>Items</h4>
-                <div id="itemList" class="row"></div>
-            </div>
+        <div class="col-md-9">
+            <div id="itemList" class="row"></div>
         </div>
     </div>
-
-    <div id="notification" class="alert" style="display:none;"></div>
 </div>
 
-<div class="modal fade" id="wishlistModal" tabindex="-1" role="dialog" aria-labelledby="wishlistModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="wishlistModalLabel">Add to Wishlist</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p id="modalMessage"></p>
-                <p><strong>Quantity:</strong> <span id="modalQuantity"></span></p>
-
-                <div class="form-group">
-                    <label for="donationAmount">Donation Amount (optional):</label>
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <button class="btn btn-outline-secondary" type="button" onclick="changeDonationAmount(-1)">-</button>
-                        </div>
-                        <input type="number" id="donationAmount" class="form-control" value="0" min="0" readonly>
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="button" onclick="changeDonationAmount(1)">+</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="confirmAdd">Confirm</button>
-            </div>
+<div class="modal" id="wishlistModal">
+    <div class="modal-header">
+        <h5 id="wishlistModalLabel">Your Order</h5>
+        <button class="close-modal-one" onclick="toggleModal(false)">Close</button>
+    </div>
+    <div class="modal-body">
+        <p id="modalMessage"></p>
+        <label for="donationAmount">Donation Amount (optional):</label>
+        <div class="donation-controls">
+            <button class="button" onclick="changeDonationAmount(-1)">-</button>
+            <input type="number" id="donationAmount" class="quantity-input" value="0" min="0" readonly>
+            <button class="button" onclick="changeDonationAmount(1)">+</button>
         </div>
+    </div>
+    <div class="modal-footer">
+        <button class="close-modal-two" onclick="toggleModal(false)">Cancel</button>
+        <button class="button-two" id="confirmAdd">Confirm</button>
     </div>
 </div>
 
 <script>
     let currentItemId;
-    let currentQuantity;
+
+    function toggleModal(show) {
+        document.getElementById("wishlistModal").style.display = show ? "block" : "none";
+    }
 
     function loadItemsByCategory(categoryElement) {
         const categoryName = categoryElement.getAttribute("data-category-name");
-
-        $.ajax({
-            url: '/wishlist/items',
-            type: 'GET',
-            data: { category: categoryName },
-            success: function(items) {
-                const itemList = $('#itemList');
-                itemList.empty();
+        fetch(`/wishlist/items?category=${categoryName}`)
+            .then(response => response.json())
+            .then(items => {
+                const itemList = document.getElementById('itemList');
+                itemList.innerHTML = '';
 
                 if (items.length === 0) {
-                    itemList.append('<p>No items found for this category.</p>');
+                    itemList.innerHTML = '<p>No items found for this category.</p>';
                 } else {
                     items.forEach(item => {
-                        const formattedPrice = item.price % 1 === 0 ? item.price.toFixed(0) : item.price.toFixed(2);
-                        const buttonText = item.quantity > 0 ? 'Save to Wishlist' : 'Reserve';
-
-                        const itemHtml = `
-                            <div class="col-md-4">
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <h5 class="card-title">${item.itemName}</h5>
-                                        <p class="card-text">${item.description}</p>
-                                        <p class="card-text"><strong>Price:</strong> ${formattedPrice} kr.</p>
-                                        <p class="card-text"><strong>Available Stock:</strong> ${item.quantity}</p>
-                                        <div class="input-group mb-3">
-                                            <div class="input-group-prepend">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, -1)">-</button>
-                                            </div>
-                                            <input type="number" id="quantity-${item.id}" class="form-control" value="1" min="1" max="${item.quantity}" readonly>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, 1)">+</button>
-                                            </div>
-                                        </div>
-                                        <button onclick="openModal(${item.id})" class="btn btn-primary" data-item-id="${item.id}">
-                                            ${item.quantity > 0 ? 'Save to Wishlist' : 'Reserve'}
-                                        </button>
-                                    </div>
-                                </div>
+                        itemList.innerHTML += `
+                            <div class="item-card">
+                                <h5>${item.itemName}</h5>
+                                <p>${item.description}</p>
+                                <p><strong>Price:</strong> ${item.price} kr</p>
+                                <button onclick="openModal(${item.id})" class="button-three">Add To Wishlist</button>
                             </div>
                         `;
-                        itemList.append(itemHtml);
                     });
                 }
-            },
-            error: function(error) {
-                console.error('Error fetching items:', error);
-            }
-        });
-    }
-
-    function changeQuantity(itemId, delta) {
-        const quantityInput = $(`#quantity-${itemId}`);
-        let currentQuantity = parseInt(quantityInput.val());
-        currentQuantity += delta;
-        if (currentQuantity < 1) currentQuantity = 1;
-        quantityInput.val(currentQuantity);
+            })
+            .catch(console.error);
     }
 
     function openModal(itemId) {
         currentItemId = itemId;
-        currentQuantity = parseInt($(`#quantity-${itemId}`).val());
-        const actionButton = $(`#action-${itemId}`);
-        const actionText = actionButton.text();
-
-        const availableStock = parseInt($(`#quantity-${itemId}`).attr('max'));
-
-        if (currentQuantity > availableStock) {
-
-            $('#notification')
-                .removeClass('alert-success')
-                .addClass('alert-danger')
-                .text(`You cannot add ${currentQuantity} of this item to your wishlist because the quantity selected exceeds the amount we can provide in stock.`)
-                .show();
-            return;
-        }
-
-        $('#modalMessage').text(`Are you sure you want to ${actionText.toLowerCase()} this item?`);
-        $('#modalQuantity').text(currentQuantity);
-
-        $('#donationAmount').val(0);
-
-        $('#wishlistModal').modal('show');
+        document.getElementById("modalMessage").innerText = `Are you sure you want to add this item to your wishlist?`;
+        document.getElementById("donationAmount").value = 0;
+        toggleModal(true);
     }
 
-    $('#confirmAdd').on('click', function() {
-        const donationAmount = parseInt($('#donationAmount').val());
+    document.getElementById('confirmAdd').addEventListener('click', function () {
+        const donationAmount = parseInt(document.getElementById('donationAmount').value);
+
         fetch(`/wishlist/add`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            body: `itemId=${currentItemId}&quantity=${currentQuantity}&donationAmount=${donationAmount}`
+            body: `itemId=${currentItemId}&donationAmount=${donationAmount}`
         })
             .then(response => {
                 if (!response.ok) {
@@ -209,56 +130,53 @@
                 return response.text();
             })
             .then(message => {
-                $('#wishlistModal').modal('hide');
-
-                $('#notification')
-                    .removeClass('alert-danger')
-                    .addClass('alert-success')
-                    .text(message).show().delay(3000).fadeOut();
+                toggleModal(false);
+                showNotification(message, 'success');
             })
             .catch(error => {
-                console.error("Error saving item to wishlist:", error);
+                console.error("Error adding item to wishlist:", error);
+                showNotification('Error adding item to wishlist.', 'danger');
             });
     });
 
     function changeDonationAmount(delta) {
-        const donationInput = $('#donationAmount');
-        let currentDonation = parseInt(donationInput.val());
+        const donationInput = document.getElementById('donationAmount');
+        let currentDonation = parseInt(donationInput.value);
         currentDonation += delta;
         if (currentDonation < 0) currentDonation = 0;
-        donationInput.val(currentDonation);
+        donationInput.value = currentDonation;
     }
 
-    $('#confirmAdd').on('click', function() {
-        const donationAmount = parseInt($('#donationAmount').val());
-        fetch(`/wishlist/add`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `itemId=${currentItemId}&quantity=${currentQuantity}&donationAmount=${donationAmount}`
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-                return response.text();
-            })
-            .then(message => {
-                $('#wishlistModal').modal('hide');
+    function showNotification(message, type) {
+        const notification = document.getElementById('notification');
+        notification.className = type === 'success' ? 'alert alert-success' : 'alert alert-danger';
+        notification.innerText = message;
+        notification.style.display = 'block';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
 
-                $('#notification').text(message).show().delay(3000).fadeOut();
-            })
-            .catch(error => {
-                console.error("Error saving item to wishlist:", error);
-            });
-    });
+    function toggleDropdown(event) {
+        event.preventDefault();
+        const dropdownMenu = document.getElementById('wishlistDropdownMenu');
+        dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    window.onclick = function(event) {
+        if (!event.target.matches('.nav-link.dropdown-toggle')) {
+            const dropdowns = document.getElementsByClassName('dropdown-menu');
+            for (let i = 0; i < dropdowns.length; i++) {
+                dropdowns[i].style.display = 'none';
+            }
+        }
+    }
 </script>
 
 <div id="footer-placeholder"></div>
 
 <script>
-    window.onload = function() {
+    window.onload = function () {
         fetch('../footer.html')
             .then(response => response.text())
             .then(data => {
@@ -267,5 +185,6 @@
             .catch(error => console.error('Error loading footer:', error));
     };
 </script>
+
 </body>
 </html>

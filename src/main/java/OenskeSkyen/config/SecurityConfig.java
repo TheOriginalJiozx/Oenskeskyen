@@ -50,7 +50,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/", "/header.html", "/footer.html", "/h2-console/**", "/css/**").permitAll()
+                        .requestMatchers("/", "/header.html", "/footer.html", "/h2-console/**", "/css/**", "/wishlist/reserve").permitAll()
                         .requestMatchers("/login", "/signup").anonymous()
                         .anyRequest().authenticated()
                 )
@@ -63,7 +63,7 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login?logout")
                 )
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/h2-console/**", "/wishlist/add")
+                        .ignoringRequestMatchers("/h2-console/**", "/wishlist/add", "/wishlist/reserve")
                 )
                 .headers(headers -> headers
                         .frameOptions().sameOrigin()

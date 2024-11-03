@@ -4,62 +4,69 @@
     <meta charset="UTF-8">
     <title>My Wishlist</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}" />
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="/" th:href="@{/}">Wishlist</a>
-    <div class="collapse navbar-collapse">
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item">
-                <a class="nav-link" th:href="@{/}">Home</a>
-            </li>
-            <li class="nav-item" th:if="${username == 'Guest'}">
-                <a class="nav-link" th:href="@{/login}">Login</a>
-            </li>
-            <li class="nav-item" th:if="${username == 'Guest'}">
-                <a class="nav-link" th:href="@{/signup}">Signup</a>
-            </li>
-            <li class="nav-item dropdown" th:if="${username != 'Guest'}">
-                <a class="nav-link dropdown-toggle" href="#" id="wishlistDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Wishlist
-                </a>
-                <div class="dropdown-menu" aria-labelledby="wishlistDropdown">
-                    <a class="dropdown-item" th:href="@{/wishlist/view}">View Wishlist</a>
-                    <a class="dropdown-item" th:href="@{/wishlist/add}">Add Item</a>
-                    <a class="dropdown-item" th:href="@{/wishlist/manage}">Manage Items</a>
-                </div>
-            </li>
-            <li class="nav-item" th:if="${username != 'Guest'}">
+<nav class="navbar">
+    <div class="navbar-left">
+        <a href="/" th:href="@{/}" class="navbar-logo">Wishlist</a>
+        <div class="navbar-links">
+            <a class="nav-link" th:href="@{/}">Home</a>
+            <a class="nav-link" th:href="@{/login}" th:if="${username == 'Guest'}">Login</a>
+            <a class="nav-link" th:href="@{/signup}" th:if="${username == 'Guest'}">Signup</a>
+            <ul class="nav-dropdown">
+                <li class="nav-item dropdown" th:if="${username != 'Guest'}">
+                    <a class="nav-link dropdown-toggle" href="#" id="wishlistDropdown" onclick="toggleDropdown(event)">
+                        Wishlist <span class="arrow">&#x25BC;</span>
+                    </a>
+                    <div class="dropdown-menu" id="wishlistDropdownMenu">
+                        <a class="dropdown-item" th:href="@{/wishlist/view}">View Wishlist</a>
+                        <a class="dropdown-item" th:href="@{/wishlist/add}">Add Item</a>
+                        <a class="dropdown-item" th:href="@{/wishlist/manage}">Manage Items</a>
+                    </div>
+                </li>
+            </ul>
+            <span class="nav-link" th:if="${username != 'Guest'}">
                 <form action="#" th:action="@{/logout}" method="post" style="display: inline;">
-                    <button class="btn btn-link nav-link" type="submit">Logout</button>
+                    <a href="#" onclick="event.preventDefault(); this.closest('form').submit();" class="logout-link">Logout</a>
                 </form>
-            </li>
-        </ul>
-        <span class="navbar-text">
-            Welcome, <span th:text="${username}"></span>!
-        </span>
+            </span>
+        </div>
     </div>
+    <span class="welcome-message" th:if="${username != 'Guest'}">Welcome, <span th:text="${username}"></span>!</span>
 </nav>
 
 <div class="container">
+    <h1>My Wishlist</h1>
     <div th:if="${wishListItems.isEmpty()}">
-        <h1>My Wishlist</h1>
         <p>No wishlist items available.</p>
     </div>
     <div th:each="item : ${wishListItems}">
-        <h1>My Wishlist</h1>
-        Item Name: <p th:text="${item.itemName}"></p>
-        Item Description: <p th:text="${item.description}"></p>
-        Item Price: <p th:text="${#numbers.formatDecimal(item.price, 0, item.price % 1 == 0 ? 0 : 2).replace(',', '.') + ' kr.'}"></p>
+        <div class="wishlist-item">
+            <h3 th:text="${item.itemName}"></h3>
+            <p th:text="${item.description}"></p>
+            <p th:text="${#numbers.formatDecimal(item.price, 0, item.price % 1 == 0 ? 0 : 2).replace(',', '.') + ' kr.'}"></p>
+            <p th:if="${item.isReserved == 0}">Available</p>
+            <p th:if="${item.isReserved == 1}">Reserved</p>
+        </div>
     </div>
 
     <div class="share-button mt-3">
         <button class="btn btn-info" id="shareWishlistButton">Share My Wishlist</button>
+        <button class="btn btn-warning" id="reserveItemsButton">Reserve Items</button>
+    </div>
+</div>
+
+<div class="modal" id="reserveItemsModal" style="display: none;">
+    <div class="modal-header">
+        <h5 id="reserveItemsModalLabel">Reserve Items</h5>
+        <button class="close-modal" onclick="toggleModal(false)">Close</button>
+    </div>
+    <div class="modal-body" id="reserveItemsModalBody">
+        <p>No items to display.</p>
+    </div>
+    <div class="modal-footer">
+        <button class="close-modal" onclick="toggleModal(false)">Close</button>
     </div>
 </div>
 
@@ -76,6 +83,78 @@
 
         prompt("Share this link:", shareLink);
     };
+
+    document.getElementById('reserveItemsButton').onclick = function() {
+        loadReserveItems();
+    };
+
+    function toggleDropdown(event) {
+        event.preventDefault();
+        const dropdownMenu = document.getElementById('wishlistDropdownMenu');
+        dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    window.onclick = function(event) {
+        if (!event.target.matches('.nav-link.dropdown-toggle')) {
+            const dropdowns = document.getElementsByClassName('dropdown-menu');
+            for (let i = 0; i < dropdowns.length; i++) {
+                dropdowns[i].style.display = 'none';
+            }
+        }
+    }
+
+    function loadReserveItems() {
+        const wishlistUserId = /*[[${wishlistUserId}]]*/ ''; // Fetch the wishlist user's ID
+        $.ajax({
+            type: "GET",
+            url: `/wishlist/items?userId=${wishlistUserId}`, // Use userId instead of category
+            success: function(items) {
+                const modalBody = document.getElementById('reserveItemsModalBody');
+                modalBody.innerHTML = ''; // Clear previous content
+
+                if (items.length === 0) {
+                    modalBody.innerHTML = '<p>No items available to reserve.</p>';
+                } else {
+                    items.forEach(item => {
+                        modalBody.innerHTML += `
+                    <div class="item-card">
+                        <h5>${item.itemName}</h5>
+                        <p>${item.description}</p>
+                        <p><strong>Price:</strong> ${item.price} kr</p>
+                        <p><strong>Status:</strong> ${item.isReserved === 1 ? 'Reserved' : 'Available'}</p>
+                        <button onclick="reserveItem(${item.id})" class="button">${item.isReserved === 1 ? 'Unreserve' : 'Reserve'}</button>
+                    </div>
+                `;
+                    });
+                }
+
+                toggleModal(true);
+            },
+            error: function(xhr, status, error) {
+                alert("Error loading items: " + xhr.responseText);
+            }
+        });
+    }
+
+    function toggleModal(show) {
+        document.getElementById("reserveItemsModal").style.display = show ? "block" : "none";
+    }
+
+    function reserveItem(itemId) {
+        $.ajax({
+            type: "POST",
+            url: "/wishlist/reserve",
+            contentType: "application/json",
+            data: JSON.stringify({ itemId: itemId }),
+            success: function(response) {
+                alert(response);
+                toggleModal(false); // Close the modal after reservation
+            },
+            error: function(xhr, status, error) {
+                alert("Error reserving item: " + xhr.responseText);
+            }
+        });
+    }
 </script>
 
 <div id="footer-placeholder"></div>

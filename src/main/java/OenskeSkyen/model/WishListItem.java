@@ -6,7 +6,7 @@ public class WishListItem {
     private String description;
     private Long userId;
     private Double price;
-    private Integer quantity;
+    private Integer isReserved;
 
     public Long getId() {
         return id;
@@ -40,19 +40,19 @@ public class WishListItem {
         this.userId = userId;
     }
 
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
     public Double getPrice() {
         return price;
     }
 
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
+    public void setPrice(Double price) {
+        this.price = price;
     }
 
-    public Integer getQuantity() {
-        return quantity;
+    public Integer getIsReserved() {
+        return isReserved; // Getter for isReserved
+    }
+
+    public void setIsReserved(Integer isReserved) {
+        this.isReserved = isReserved; // Setter for isReserved
     }
 }

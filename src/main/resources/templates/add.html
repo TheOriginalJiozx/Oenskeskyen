@@ -122,33 +122,33 @@
                     itemList.append('<p>No items found for this category.</p>');
                 } else {
                     items.forEach(item => {
-                        const formattedPrice = item.price % 1 === 0 ? item.price.toFixed(0) : item.price.toFixed(2);
                         const buttonText = item.quantity > 0 ? 'Save to Wishlist' : 'Reserve';
 
                         const itemHtml = `
-                            <div class="col-md-4">
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <h5 class="card-title">${item.itemName}</h5>
-                                        <p class="card-text">${item.description}</p>
-                                        <p class="card-text"><strong>Price:</strong> ${formattedPrice} kr.</p>
-                                        <p class="card-text"><strong>Available Stock:</strong> ${item.quantity}</p>
-                                        <div class="input-group mb-3">
-                                            <div class="input-group-prepend">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, -1)">-</button>
-                                            </div>
-                                            <input type="number" id="quantity-${item.id}" class="form-control" value="1" min="1" max="${item.quantity}" readonly>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, 1)">+</button>
-                                            </div>
-                                        </div>
-                                        <button onclick="openModal(${item.id})" class="btn btn-primary" data-item-id="${item.id}">
-                                            ${item.quantity > 0 ? 'Save to Wishlist' : 'Reserve'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">${item.itemName}</h5>
+                <p class="card-text">${item.description}</p>
+                <p class="card-text"><strong>Price:</strong> ${item.price} kr.</p>
+                <p class="card-text"><strong>Available Stock:</strong> ${item.quantity}</p>
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, -1)">-</button>
+                    </div>
+                    <input type="number" id="quantity-${item.id}" class="form-control" value="1" min="1" max="${item.quantity}" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, 1)">+</button>
+                    </div>
+                </div>
+                <button onclick="openModal(${item.id})" class="btn btn-primary" data-item-id="${item.id}">
+                    ${buttonText}
+                </button>
+            </div>
+        </div>
+    </div>
+`;
+
                         itemList.append(itemHtml);
                     });
                 }
@@ -170,32 +170,15 @@
     function openModal(itemId) {
         currentItemId = itemId;
         currentQuantity = parseInt($(`#quantity-${itemId}`).val());
-        const actionButton = $(`#action-${itemId}`);
-        const actionText = actionButton.text();
-
-        const availableStock = parseInt($(`#quantity-${itemId}`).attr('max'));
-
-        if (currentQuantity > availableStock) {
-
-            $('#notification')
-                .removeClass('alert-success')
-                .addClass('alert-danger')
-                .text(`You cannot add ${currentQuantity} of this item to your wishlist because the quantity selected exceeds the amount we can provide in stock.`)
-                .show();
-            return;
-        }
-
-        $('#modalMessage').text(`Are you sure you want to ${actionText.toLowerCase()} this item?`);
+        $('#modalMessage').text(`Are you sure you want to reserve this item?`);
         $('#modalQuantity').text(currentQuantity);
-
         $('#donationAmount').val(0);
-
         $('#wishlistModal').modal('show');
     }
 
     $('#confirmAdd').on('click', function() {
         const donationAmount = parseInt($('#donationAmount').val());
-        fetch(`/wishlist/add`, {
+        fetch(`/wishlist/reserve`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -217,7 +200,7 @@
                     .text(message).show().delay(3000).fadeOut();
             })
             .catch(error => {
-                console.error("Error saving item to wishlist:", error);
+                console.error("Error reserving item:", error);
             });
     });
 

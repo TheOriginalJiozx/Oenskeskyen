@@ -164,9 +164,7 @@ public class WishListController {
                         item.getItemName(), item.getDescription(), item.getPrice(), userId
                 );
 
-                jdbcTemplate.update(
-                        "UPDATE wish_items SET stock_quantity = stock_quantity - ? WHERE id = ?",
-                        quantity, itemId
+                jdbcTemplate.update("UPDATE wish_items SET stock_quantity = stock_quantity - ? WHERE id = ?", quantity, itemId
                 );
 
                 success = rowsInserted > 0;
@@ -181,7 +179,6 @@ public class WishListController {
                 responseMessage = success ? "Item reserved successfully!" : "Failed to reserve item.";
             }
 
-            // Update times_donated if a donation was made
             if (donationAmount > 0) {
                 int rowsUpdated = jdbcTemplate.update(
                         "UPDATE wish_users SET times_donated = times_donated + 1 WHERE id = ?",
@@ -189,8 +186,7 @@ public class WishListController {
                 );
 
                 if (rowsUpdated <= 0) {
-                    // If no rows were updated, log a message
-                    System.out.println("No update occurred for times_donated for user_id: " + userId);
+                    System.out.println("No update occurred for times_donated for id: " + userId);
                 }
             }
         } catch (Exception e) {

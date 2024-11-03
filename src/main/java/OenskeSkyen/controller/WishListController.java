@@ -131,7 +131,7 @@ public class WishListController {
 
     @PostMapping("/wishlist/add")
     @ResponseBody
-    public String addWishListItem(@RequestParam Long itemId, @RequestParam int quantity) {
+    public String addWishListItem(@RequestParam Long itemId, @RequestParam int quantity, @RequestParam int donationAmount) {
         WishItem item = jdbcTemplate.queryForObject(
                 "SELECT item_name, item_description, price, stock_quantity FROM wish_items WHERE id = ?",
                 new Object[]{itemId},
@@ -154,26 +154,52 @@ public class WishListController {
             return "Error: User not authenticated.";
         }
 
-        if (item.getQuantity() >= quantity) {
-            int rowsInserted = jdbcTemplate.update(
-                    "INSERT INTO wishlist_items (item_name, item_description, price, user_id) VALUES (?, ?, ?, ?)",
-                    item.getItemName(), item.getDescription(), item.getPrice(), userId
-            );
+        String responseMessage;
+        boolean success = false;
 
-            jdbcTemplate.update(
-                    "UPDATE wish_items SET stock_quantity = stock_quantity - ? WHERE id = ?",
-                    quantity, itemId
-            );
+        try {
+            if (item.getQuantity() >= quantity) {
+                int rowsInserted = jdbcTemplate.update(
+                        "INSERT INTO wishlist_items (item_name, item_description, price, user_id) VALUES (?, ?, ?, ?)",
+                        item.getItemName(), item.getDescription(), item.getPrice(), userId
+                );
 
-            return rowsInserted > 0 ? "Item added to wishlist successfully!" : "Failed to add item to wishlist.";
-        } else {
-            int rowsReserved = jdbcTemplate.update(
-                    "INSERT INTO reserved_items (item_name, amount, user_id) VALUES (?, ?, ?)",
-                    item.getItemName(), quantity, userId
-            );
+                jdbcTemplate.update(
+                        "UPDATE wish_items SET stock_quantity = stock_quantity - ? WHERE id = ?",
+                        quantity, itemId
+                );
 
-            return rowsReserved > 0 ? "Item reserved successfully!" : "Failed to reserve item.";
+                success = rowsInserted > 0;
+                responseMessage = success ? "Item added to wishlist successfully!" : "Failed to add item to wishlist.";
+            } else {
+                int rowsReserved = jdbcTemplate.update(
+                        "INSERT INTO reserved_items (item_name, amount, user_id) VALUES (?, ?, ?)",
+                        item.getItemName(), quantity, userId
+                );
+
+                success = rowsReserved > 0;
+                responseMessage = success ? "Item reserved successfully!" : "Failed to reserve item.";
+            }
+
+            // Update times_donated if a donation was made
+            if (donationAmount > 0) {
+                int rowsUpdated = jdbcTemplate.update(
+                        "UPDATE wish_users SET times_donated = times_donated + 1 WHERE id = ?",
+                        userId
+                );
+
+                if (rowsUpdated <= 0) {
+                    // If no rows were updated, log a message
+                    System.out.println("No update occurred for times_donated for user_id: " + userId);
+                }
+            }
+        } catch (Exception e) {
+            // Log the exception
+            e.printStackTrace();
+            responseMessage = "Error: " + e.getMessage();
         }
+
+        return responseMessage;
     }
 
     @GetMapping("/signup")

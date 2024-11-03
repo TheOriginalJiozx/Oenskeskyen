@@ -5,6 +5,7 @@ public class User {
     private String username;
     private String password;
     private boolean enabled;
+    private Integer donation;
 
     public Long getId() {
         return id;
@@ -36,5 +37,13 @@ public class User {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public void setDonation(Integer donation) {
+        this.donation = donation;
+    }
+
+    public Integer getDonation() {
+        return donation;
     }
 }

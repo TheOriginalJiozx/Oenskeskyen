@@ -65,9 +65,10 @@
             </div>
         </div>
     </div>
+
+    <div id="notification" class="alert" style="display:none;"></div>
 </div>
 
-<!-- Modal -->
 <div class="modal fade" id="wishlistModal" tabindex="-1" role="dialog" aria-labelledby="wishlistModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -80,6 +81,19 @@
             <div class="modal-body">
                 <p id="modalMessage"></p>
                 <p><strong>Quantity:</strong> <span id="modalQuantity"></span></p>
+
+                <div class="form-group">
+                    <label for="donationAmount">Donation Amount (optional):</label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <button class="btn btn-outline-secondary" type="button" onclick="changeDonationAmount(-1)">-</button>
+                        </div>
+                        <input type="number" id="donationAmount" class="form-control" value="0" min="0" readonly>
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button" onclick="changeDonationAmount(1)">+</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -101,7 +115,6 @@
             type: 'GET',
             data: { category: categoryName },
             success: function(items) {
-                console.log(items); // Log the items to see their structure
                 const itemList = $('#itemList');
                 itemList.empty();
 
@@ -110,32 +123,32 @@
                 } else {
                     items.forEach(item => {
                         const formattedPrice = item.price % 1 === 0 ? item.price.toFixed(0) : item.price.toFixed(2);
-                        const buttonText = item.stock_quantity > 0 ? 'Save to Wishlist' : 'Reserve';
+                        const buttonText = item.quantity > 0 ? 'Save to Wishlist' : 'Reserve';
 
                         const itemHtml = `
-                    <div class="col-md-4">
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <h5 class="card-title">${item.itemName}</h5>
-                                <p class="card-text">${item.description}</p>
-                                <p class="card-text"><strong>Price:</strong> ${formattedPrice} kr.</p>
-                                <p class="card-text"><strong>Available Stock:</strong> ${item.quantity}</p> <!-- Ensure this accesses item.quantity -->
-                                <div class="input-group mb-3">
-                                    <div class="input-group-prepend">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, -1)">-</button>
-                                    </div>
-                                    <input type="number" id="quantity-${item.id}" class="form-control" value="1" min="1" max="${item.quantity}" readonly>
-                                    <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, 1)">+</button>
+                            <div class="col-md-4">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${item.itemName}</h5>
+                                        <p class="card-text">${item.description}</p>
+                                        <p class="card-text"><strong>Price:</strong> ${formattedPrice} kr.</p>
+                                        <p class="card-text"><strong>Available Stock:</strong> ${item.quantity}</p>
+                                        <div class="input-group mb-3">
+                                            <div class="input-group-prepend">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, -1)">-</button>
+                                            </div>
+                                            <input type="number" id="quantity-${item.id}" class="form-control" value="1" min="1" max="${item.quantity}" readonly>
+                                            <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity(${item.id}, 1)">+</button>
+                                            </div>
+                                        </div>
+                                        <button onclick="openModal(${item.id})" class="btn btn-primary" data-item-id="${item.id}">
+                                            ${item.quantity > 0 ? 'Save to Wishlist' : 'Reserve'}
+                                        </button>
                                     </div>
                                 </div>
-                                <button onclick="openModal(${item.id})" class="btn btn-primary" data-item-id="${item.id}">
-                                    ${item.quantity > 0 ? 'Save to Wishlist' : 'Reserve'}
-                                </button>
                             </div>
-                        </div>
-                    </div>
-                `;
+                        `;
                         itemList.append(itemHtml);
                     });
                 }
@@ -160,28 +173,81 @@
         const actionButton = $(`#action-${itemId}`);
         const actionText = actionButton.text();
 
+        const availableStock = parseInt($(`#quantity-${itemId}`).attr('max'));
+
+        if (currentQuantity > availableStock) {
+
+            $('#notification')
+                .removeClass('alert-success')
+                .addClass('alert-danger')
+                .text(`You cannot add ${currentQuantity} of this item to your wishlist because the quantity selected exceeds the amount we can provide in stock.`)
+                .show();
+            return;
+        }
+
         $('#modalMessage').text(`Are you sure you want to ${actionText.toLowerCase()} this item?`);
         $('#modalQuantity').text(currentQuantity);
+
+        $('#donationAmount').val(0);
+
         $('#wishlistModal').modal('show');
     }
 
     $('#confirmAdd').on('click', function() {
+        const donationAmount = parseInt($('#donationAmount').val());
         fetch(`/wishlist/add`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            body: `itemId=${currentItemId}&quantity=${currentQuantity}`
+            body: `itemId=${currentItemId}&quantity=${currentQuantity}&donationAmount=${donationAmount}`
         })
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok ' + response.statusText);
                 }
-                return response.json();
+                return response.text();
             })
-            .then(data => {
+            .then(message => {
                 $('#wishlistModal').modal('hide');
-                alert(data.message); // Show alert for the success message
+
+                $('#notification')
+                    .removeClass('alert-danger')
+                    .addClass('alert-success')
+                    .text(message).show().delay(3000).fadeOut();
+            })
+            .catch(error => {
+                console.error("Error saving item to wishlist:", error);
+            });
+    });
+
+    function changeDonationAmount(delta) {
+        const donationInput = $('#donationAmount');
+        let currentDonation = parseInt(donationInput.val());
+        currentDonation += delta;
+        if (currentDonation < 0) currentDonation = 0;
+        donationInput.val(currentDonation);
+    }
+
+    $('#confirmAdd').on('click', function() {
+        const donationAmount = parseInt($('#donationAmount').val());
+        fetch(`/wishlist/add`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `itemId=${currentItemId}&quantity=${currentQuantity}&donationAmount=${donationAmount}`
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.text();
+            })
+            .then(message => {
+                $('#wishlistModal').modal('hide');
+
+                $('#notification').text(message).show().delay(3000).fadeOut();
             })
             .catch(error => {
                 console.error("Error saving item to wishlist:", error);

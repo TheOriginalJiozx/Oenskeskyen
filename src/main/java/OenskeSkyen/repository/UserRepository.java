@@ -18,4 +18,12 @@ public class UserRepository {
         String sql = "SELECT * FROM wish_users WHERE username = ?";
         return jdbcTemplate.queryForObject(sql, new Object[]{username}, new UserRowMapper());
     }
+
+    public Long getUserIdByUsername(String username) {
+        return jdbcTemplate.queryForObject(
+                "SELECT id FROM wish_users WHERE username = ?",
+                new Object[]{username},
+                Long.class
+        );
+    }
 }

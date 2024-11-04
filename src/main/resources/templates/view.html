@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>My Wishlist</title>
+    <title th:text="${wishlistOwner} + '\'s Wishlist'"></title>
     <link rel="stylesheet" th:href="@{/css/styles.css}" />
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 </head>
@@ -37,23 +37,25 @@
 </nav>
 
 <div class="container">
-    <h1>My Wishlist</h1>
+    <h1 th:text="${wishlistOwner} + '\'s Wishlist'"></h1>
     <div th:if="${wishListItems.isEmpty()}">
         <p>No wishlist items available.</p>
     </div>
-    <div th:each="item : ${wishListItems}">
-        <div class="wishlist-item">
-            <h3 th:text="${item.itemName}"></h3>
-            <p th:text="${item.description}"></p>
-            <p th:text="${#numbers.formatDecimal(item.price, 0, item.price % 1 == 0 ? 0 : 2).replace(',', '.') + ' kr.'}"></p>
-            <p th:if="${item.isReserved == 0}">Available</p>
-            <p th:if="${item.isReserved == 1}">Reserved</p>
-        </div>
+    <div th:each="item : ${wishListItems}" class="wishlist-item" th:attr="data-item-id=${item.id}">
+        <h3 th:text="${item.itemName}"></h3>
+        <p th:text="${item.description}"></p>
+        <p th:text="${#numbers.formatDecimal(item.price, 0, item.price % 1 == 0 ? 0 : 2) + ' kr.'}"></p>
+
+        <button th:if="${username != wishlistOwner}" class="button"
+                th:text="${item.isReserved == 1 ? 'Unreserve' : 'Reserve'}"
+                th:onclick="'reserveItem(' + ${item.id} + ')'"
+                th:classappend="${item.isReserved == 1 ? 'reserved' : ''}">
+        </button>
     </div>
 
     <div class="share-button mt-3">
-        <button class="btn btn-info" id="shareWishlistButton">Share My Wishlist</button>
-        <button class="btn btn-warning" id="reserveItemsButton">Reserve Items</button>
+        <button class="btn btn-info" id="shareWishlistButton"
+                th:text="${username == wishlistOwner ? 'Share My Wishlist' : 'Share Wishlist'}"></button>
     </div>
 </div>
 
@@ -103,55 +105,27 @@
         }
     }
 
-    function loadReserveItems() {
-        const wishlistUserId = /*[[${wishlistUserId}]]*/ ''; // Fetch the wishlist user's ID
-        $.ajax({
-            type: "GET",
-            url: `/wishlist/items?userId=${wishlistUserId}`, // Use userId instead of category
-            success: function(items) {
-                const modalBody = document.getElementById('reserveItemsModalBody');
-                modalBody.innerHTML = ''; // Clear previous content
-
-                if (items.length === 0) {
-                    modalBody.innerHTML = '<p>No items available to reserve.</p>';
-                } else {
-                    items.forEach(item => {
-                        modalBody.innerHTML += `
-                    <div class="item-card">
-                        <h5>${item.itemName}</h5>
-                        <p>${item.description}</p>
-                        <p><strong>Price:</strong> ${item.price} kr</p>
-                        <p><strong>Status:</strong> ${item.isReserved === 1 ? 'Reserved' : 'Available'}</p>
-                        <button onclick="reserveItem(${item.id})" class="button">${item.isReserved === 1 ? 'Unreserve' : 'Reserve'}</button>
-                    </div>
-                `;
-                    });
-                }
-
-                toggleModal(true);
-            },
-            error: function(xhr, status, error) {
-                alert("Error loading items: " + xhr.responseText);
-            }
-        });
-    }
-
-    function toggleModal(show) {
-        document.getElementById("reserveItemsModal").style.display = show ? "block" : "none";
-    }
-
     function reserveItem(itemId) {
         $.ajax({
             type: "POST",
-            url: "/wishlist/reserve",
-            contentType: "application/json",
-            data: JSON.stringify({ itemId: itemId }),
+            url: `/wishlist/reserve?itemId=${itemId}`,
             success: function(response) {
-                alert(response);
-                toggleModal(false); // Close the modal after reservation
+                const itemElement = document.querySelector(`[data-item-id='${itemId}']`);
+                const statusText = itemElement.querySelector('.status-text');
+                const reserveButton = itemElement.querySelector('.button');
+
+                if (response === "Reserved") {
+                    statusText.textContent = "Reserved";
+                    reserveButton.textContent = "Unreserve";
+                    itemElement.classList.add("reserved");
+                } else if (response === "Unreserved") {
+                    statusText.textContent = "Available";
+                    reserveButton.textContent = "Reserve";
+                    itemElement.classList.remove("reserved");
+                }
             },
-            error: function(xhr, status, error) {
-                alert("Error reserving item: " + xhr.responseText);
+            error: function(xhr) {
+                alert("Error: " + xhr.responseText);
             }
         });
     }

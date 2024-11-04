@@ -4,6 +4,7 @@ import OenskeSkyen.model.Category;
 import OenskeSkyen.model.User;
 import OenskeSkyen.model.WishItem;
 import OenskeSkyen.model.WishListItem;
+import OenskeSkyen.repository.UserRepository;
 import OenskeSkyen.repository.WishListItemRepository;
 import OenskeSkyen.service.WishListService;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,12 +26,14 @@ public class WishListController {
     private final JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
     private final WishListItemRepository wishListItemRepository;
+    private final UserRepository userRepository;
 
-    public WishListController(WishListService wishListService, JdbcTemplate jdbcTemplate, PasswordEncoder passwordEncoder, WishListItemRepository wishListItemRepository) {
+    public WishListController(WishListService wishListService, JdbcTemplate jdbcTemplate, PasswordEncoder passwordEncoder, WishListItemRepository wishListItemRepository, UserRepository userRepository) {
         this.wishListService = wishListService;
         this.jdbcTemplate = jdbcTemplate;
         this.passwordEncoder = passwordEncoder;
         this.wishListItemRepository = wishListItemRepository;
+        this.userRepository = userRepository;
     }
 
     private String getAuthenticatedUsername() {
@@ -75,7 +78,7 @@ public class WishListController {
         return "home";
     }
 
-    @GetMapping("wishlist/view")
+    @GetMapping("/wishlist/view")
     public String viewWishList(@RequestParam(required = false) String user, Model model) {
         String authenticatedUsername = getAuthenticatedUsername();
 
@@ -84,6 +87,15 @@ public class WishListController {
         }
 
         model.addAttribute("username", authenticatedUsername);
+        model.addAttribute("wishlistOwner", user);
+
+        Long userId = userRepository.getUserIdByUsername(user);
+        if (userId == null) {
+
+            return "redirect:/wishlist/view?user=" + authenticatedUsername;
+        }
+
+        model.addAttribute("wishlistUserId", userId);
 
         List<WishListItem> wishListItems = wishListService.getWishListItemsForUser(user);
         model.addAttribute("wishListItems", wishListItems);
@@ -138,6 +150,24 @@ public class WishListController {
         });
     }
 
+    @GetMapping("/wishlist/items/reserve")
+    @ResponseBody
+    public List<WishListItem> getReserveItems(@RequestParam Long userId) {
+        return jdbcTemplate.query(
+                "SELECT * FROM wishlist_items WHERE user_id = ?",
+                new Object[]{userId},
+                (rs, rowNum) -> {
+                    WishListItem item = new WishListItem();
+                    item.setId(rs.getLong("id"));
+                    item.setItemName(rs.getString("item_name"));
+                    item.setDescription(rs.getString("description"));
+                    item.setPrice(rs.getDouble("price"));
+                    item.setIsReserved(rs.getInt("is_reserved"));
+                    return item;
+                }
+        );
+    }
+
     @PostMapping("/wishlist/add")
     @ResponseBody
     public String addWishListItem(@RequestParam Long itemId, @RequestParam int donationAmount) {
@@ -146,7 +176,6 @@ public class WishListController {
             return "Error: User not authenticated.";
         }
 
-        // Add the item to the wishlist
         WishItem itemToAdd = jdbcTemplate.queryForObject(
                 "SELECT item_name, item_description, price FROM wish_items WHERE id = ?",
                 new Object[]{itemId},
@@ -195,13 +224,7 @@ public class WishListController {
 
     @PostMapping("/wishlist/reserve")
     @ResponseBody
-    public String reserveItem(@RequestParam Long itemId) {
-        Long userId = wishListService.getCurrentUserId();
-        if (userId == null) {
-            return "Error: User not authenticated.";
-        }
-
-        // Check if the item is already reserved
+    public String toggleReserveItem(@RequestParam Long itemId) {
         WishListItem item = jdbcTemplate.queryForObject(
                 "SELECT id, is_reserved FROM wishlist_items WHERE id = ?",
                 new Object[]{itemId},
@@ -217,26 +240,21 @@ public class WishListController {
             return "Error: Item does not exist.";
         }
 
-        if (item.getIsReserved() == 1) {
-            return "Error: Item is already reserved.";
-        }
-
-        // Reserve the item
+        int newReserveStatus = item.getIsReserved() == 1 ? 0 : 1;
         int rowsUpdated = jdbcTemplate.update(
-                "UPDATE wishlist_items SET is_reserved = 1 WHERE id = ?",
-                itemId
+                "UPDATE wishlist_items SET is_reserved = ? WHERE id = ?",
+                newReserveStatus, itemId
         );
 
-        return (rowsUpdated > 0) ? "Item reserved successfully!" : "Error reserving item.";
+        return (rowsUpdated > 0) ? (newReserveStatus == 1 ? "Reserved" : "Unreserved") : "Error updating item.";
     }
 
     @PostMapping("/wishlist/unreserve")
     @ResponseBody
     public String unreserveItem(@RequestBody Map<String, Long> request) {
         Long itemId = request.get("itemId");
-        Long userId = wishListService.getCurrentUserId(); // Get user ID
+        Long userId = wishListService.getCurrentUserId();
 
-        // Fix: Call unreserveItem with both itemId and userId
         boolean success = wishListItemRepository.unreserveItem(itemId);
 
         return success ? "Item unreserved successfully" : "Error unreserving item";

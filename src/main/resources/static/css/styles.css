@@ -454,33 +454,30 @@ body {
     cursor: not-allowed;
 }
 
-.quantity-control {
+.quantity-controls {
     display: flex;
-    align-items: center;
+    align-items: stretch;
 }
 
-.quantity-control button {
-    background-color: #f8f9fa;
-    color: #333;
-    border: 1px solid #ccc;
-    padding: 10px 15px;
+.quantity-controls button {
+    background-color: #e9ecef;
+    border: none;
     border-radius: 0;
+    padding: 0;
+    font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+    height: 42px;
+    min-width: 40px;
 }
 
-.quantity-control button:hover {
-    background-color: #e2e6ea;
-    transform: scale(1.05);
-}
-
-.quantity-input {
+.quantity-controls input {
     width: 60px;
     text-align: center;
-    border: 1px solid #ccc;
+    border: 1px solid #e9ecef;
     border-radius: 0;
-    padding: 10px;
-    margin: 0;
+    padding: 0;
+    font-size: 16px;
+    height: 40px;
 }
 
 .donation-controls {

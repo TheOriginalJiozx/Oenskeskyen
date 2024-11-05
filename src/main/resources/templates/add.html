@@ -53,9 +53,23 @@
                     <p><strong>Price:</strong> <span th:text="${item.price}"></span> kr</p>
                     <form th:action="@{/wishlist/add}" method="post">
                         <input type="hidden" name="itemId" th:value="${item.id}" />
-                        <input type="number" name="quantity" value="1" min="1" class="quantity-input" />
-                        <label for="donationAmount">Donation Amount (optional):</label>
-                        <input type="number" id="donationAmount" name="donationAmount" class="quantity-input" min="0" value="0" />
+
+                        <!-- Quantity input with controls below label -->
+                        <label for="quantity">Quantity:</label><br>
+                        <div>
+                            <button type="button" class="button" onclick="changeValue('quantity', -1)">-</button>
+                            <input type="number" id="quantity" name="quantity" class="quantity-input" min="0" value="0" />
+                            <button type="button" class="button" onclick="changeValue('quantity', 1)">+</button>
+                        </div><br>
+
+                        <!-- Donation Amount input with controls below label -->
+                        <label for="donationAmount">Donation Amount (optional):</label><br>
+                        <div>
+                            <button type="button" class="button" onclick="changeValue('donationAmount', -1)">-</button>
+                            <input type="number" id="donationAmount" name="donationAmount" class="quantity-input" min="0" value="0" />
+                            <button type="button" class="button" onclick="changeValue('donationAmount', 1)">+</button>
+                        </div>
+
                         <button type="submit" class="button-three">Add To Wishlist</button>
                     </form>
                 </div>

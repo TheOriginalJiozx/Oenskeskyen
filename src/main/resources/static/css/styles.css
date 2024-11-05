@@ -526,7 +526,7 @@ body {
 
 .quantity-controls {
     display: flex;
-    align-items: stretch;
+    align-items: center;
 }
 
 .quantity-controls button {

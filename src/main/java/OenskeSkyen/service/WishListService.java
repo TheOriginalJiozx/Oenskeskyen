@@ -5,6 +5,7 @@ import OenskeSkyen.model.WishListItem;
 import OenskeSkyen.model.Category;
 import OenskeSkyen.repository.UserRepository;
 import OenskeSkyen.repository.WishListItemRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class WishListService {
+    @Autowired
     private UserRepository userRepository;
     private WishListItemRepository wishListItemRepository;
 

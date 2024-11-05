@@ -1,6 +1,7 @@
 package OenskeSkyen.repository;
 
 import OenskeSkyen.model.User;
+import OenskeSkyen.model.WishListItem;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -24,6 +25,22 @@ public class UserRepository {
                 "SELECT id FROM wish_users WHERE username = ?",
                 new Object[]{username},
                 Long.class
+        );
+    }
+
+    public Object getWishListItemsForUser(String username) {
+        return jdbcTemplate.query(
+                "SELECT * FROM wishlist_items WHERE user_id = (SELECT id FROM wish_users WHERE username = ?)",
+                new Object[]{username},
+                (rs, rowNum) -> {
+                    WishListItem item = new WishListItem();
+                    item.setId(rs.getLong("id"));
+                    item.setItemName(rs.getString("item_name"));
+                    item.setDescription(rs.getString("item_description"));
+                    item.setPrice(rs.getDouble("price"));
+                    item.setIsReserved(rs.getInt("is_reserved"));
+                    return item;
+                }
         );
     }
 }

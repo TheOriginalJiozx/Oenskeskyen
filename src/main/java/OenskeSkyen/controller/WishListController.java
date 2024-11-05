@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -130,8 +131,7 @@ public class WishListController {
     }
 
     @GetMapping("/wishlist/items")
-    @ResponseBody
-    public List<WishItem> getItemsByCategory(@RequestParam(required = false) String category) {
+    public String getItemsByCategory(@RequestParam(required = false) String category, Model model) {
         String sql = "SELECT * FROM wish_items";
         List<Object> params = new ArrayList<>();
 
@@ -140,7 +140,7 @@ public class WishListController {
             params.add(category);
         }
 
-        return jdbcTemplate.query(sql, params.toArray(), (rs, rowNum) -> {
+        List<WishItem> items = jdbcTemplate.query(sql, params.toArray(), (rs, rowNum) -> {
             WishItem item = new WishItem();
             item.setId(rs.getLong("id"));
             item.setItemName(rs.getString("item_name"));
@@ -148,6 +148,10 @@ public class WishListController {
             item.setPrice(rs.getDouble("price"));
             return item;
         });
+
+        model.addAttribute("items", items);
+        model.addAttribute("categories", wishListService.getAllCategories());
+        return "add";
     }
 
     @GetMapping("/wishlist/items/reserve")
@@ -169,11 +173,16 @@ public class WishListController {
     }
 
     @PostMapping("/wishlist/add")
-    @ResponseBody
-    public String addWishListItem(@RequestParam Long itemId, @RequestParam int quantity, @RequestParam int donationAmount) {
+    public ModelAndView addWishListItem(@RequestParam Long itemId, @RequestParam int quantity, @RequestParam(required = false, defaultValue = "0") int donationAmount) {
         Long userId = wishListService.getCurrentUserId();
+        ModelAndView modelAndView = new ModelAndView("add");
+
+        String authenticatedUsername = getAuthenticatedUsername();
+        modelAndView.addObject("username", authenticatedUsername);
+
         if (userId == null) {
-            return "Error: User not authenticated.";
+            modelAndView.addObject("message", "Error: User not authenticated.");
+            return modelAndView;
         }
 
         WishItem itemToAdd = jdbcTemplate.queryForObject(
@@ -189,7 +198,8 @@ public class WishListController {
         );
 
         if (itemToAdd == null) {
-            return "Error: Item does not exist.";
+            modelAndView.addObject("message", "Error: Item does not exist.");
+            return modelAndView;
         }
 
         boolean success = false;
@@ -197,7 +207,6 @@ public class WishListController {
         int rowsInserted = 0;
 
         try {
-
             for (int i = 0; i < quantity; i++) {
                 rowsInserted += jdbcTemplate.update(
                         "INSERT INTO wishlist_items (item_name, item_description, price, user_id, is_reserved) VALUES (?, ?, ?, ?, 0)",
@@ -223,11 +232,18 @@ public class WishListController {
             responseMessage = "Error: " + e.getMessage();
         }
 
-        return responseMessage;
+        modelAndView.addObject("message", responseMessage);
+
+        List<Category> categories = jdbcTemplate.query(
+                "SELECT id, category_name FROM item_categories",
+                (rs, rowNum) -> new Category(rs.getLong("id"), rs.getString("category_name"))
+        );
+        modelAndView.addObject("categories", categories);
+
+        return modelAndView;
     }
 
     @PostMapping("/wishlist/reserve")
-    @ResponseBody
     public String toggleReserveItem(@RequestParam Long itemId) {
         WishListItem item = jdbcTemplate.queryForObject(
                 "SELECT id, is_reserved FROM wishlist_items WHERE id = ?",
@@ -241,7 +257,8 @@ public class WishListController {
         );
 
         if (item == null) {
-            return "Error: Item does not exist.";
+
+            return "redirect:/wishlist/view?error=itemNotFound";
         }
 
         int newReserveStatus = item.getIsReserved() == 1 ? 0 : 1;
@@ -250,7 +267,7 @@ public class WishListController {
                 newReserveStatus, itemId
         );
 
-        return (rowsUpdated > 0) ? (newReserveStatus == 1 ? "Reserved" : "Unreserved") : "Error updating item.";
+        return "redirect:/wishlist/view";
     }
 
     @PostMapping("/wishlist/unreserve")
@@ -262,6 +279,16 @@ public class WishListController {
         boolean success = wishListItemRepository.unreserveItem(itemId);
 
         return success ? "Item unreserved successfully" : "Error unreserving item";
+    }
+
+    @PostMapping("/wishlist/share")
+    public String shareWishlist(@RequestParam("username") String shareUsername, Model model) {
+        String shareLink = "http://localhost:8080/wishlist/view?user=" + shareUsername;
+        model.addAttribute("shareLink", shareLink);
+        model.addAttribute("wishlistOwner", shareUsername);
+        model.addAttribute("wishListItems", userRepository.getWishListItemsForUser(shareUsername));
+
+        return "view";
     }
 
     @GetMapping("/signup")

@@ -16,7 +16,6 @@ body {
     flex: 1;
 }
 
-/* Custom container styling */
 .container-custom {
     max-width: 400px;
     margin: 50px auto;
@@ -35,7 +34,6 @@ body {
     margin-bottom: 20px;
 }
 
-/* Form group styling */
 .form-group {
     margin-bottom: 15px;
 }
@@ -106,6 +104,11 @@ body {
     transition: background-color 0.3s;
     width: 50%;
     list-style-type: none;
+}
+
+.category-item a {
+    text-decoration: none;
+    color: black;
 }
 
 .category-item:hover {
@@ -319,9 +322,37 @@ body {
 
 .nav-dropdown {
     position: relative;
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+}
+
+.dropdown-toggle-checkbox {
+    display: none;
+}
+
+.dropdown-toggle {
+    cursor: pointer;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    z-index: 1000;
+}
+
+.dropdown-toggle-checkbox:checked + .dropdown-toggle + .dropdown-menu {
+    display: block;
+}
+
+.dropdown-item {
+    display: block;
+    padding: 8px 12px;
+    color: black;
+    text-decoration: none;
+}
+
+.dropdown-item:hover {
+    background-color: #f0f0f0;
 }
 
 .nav-item {
@@ -379,6 +410,10 @@ body {
     padding: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     border-radius: 5px;
+}
+
+.modal.show {
+    display: block;
 }
 
 .modal-header {
@@ -550,4 +585,24 @@ body {
 
 #shareWishlistButton:active {
     transform: scale(0.95);
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    z-index: 1000;
+}
+
+.dropdown-toggle-checkbox:checked + .dropdown-menu {
+    display: block;
+}
+
+.dropdown-toggle-checkbox {
+    display: none;
+}
+
+.nav-link.dropdown-toggle {
+    cursor: pointer;
 }

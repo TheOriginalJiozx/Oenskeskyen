@@ -3,9 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>My Wishlist</title>
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <link rel="stylesheet" th:href="@{/css/styles.css}" />
 </head>
 <body>
@@ -18,10 +15,9 @@
             <a class="nav-link" th:href="@{/signup}" th:if="${username == 'Guest'}">Signup</a>
             <ul class="nav-dropdown">
                 <li class="nav-item dropdown" th:if="${username != 'Guest'}">
-                    <a class="nav-link dropdown-toggle" href="#" id="wishlistDropdown" onclick="toggleDropdown(event)">
-                        Wishlist <span class="arrow">&#x25BC;</span>
-                    </a>
-                    <div class="dropdown-menu" id="wishlistDropdownMenu">
+                    <input type="checkbox" id="dropdown-toggle" class="dropdown-toggle-checkbox" />
+                    <label for="dropdown-toggle" class="nav-link dropdown-toggle">Wishlist <span class="arrow">&#x25BC;</span></label>
+                    <div class="dropdown-menu">
                         <a class="dropdown-item" th:href="@{/wishlist/view}">View Wishlist</a>
                         <a class="dropdown-item" th:href="@{/wishlist/add}">Add Item</a>
                         <a class="dropdown-item" th:href="@{/wishlist/manage}">Manage Items</a>
@@ -43,34 +39,6 @@
     <p>Manage your wishes and share them with others!</p>
 </div>
 
-<div id="footer-placeholder"></div>
-
-<script>
-    function toggleDropdown(event) {
-        event.preventDefault();
-        const dropdownMenu = document.getElementById('wishlistDropdownMenu');
-        dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
-    }
-
-    window.onclick = function(event) {
-        if (!event.target.matches('.nav-link.dropdown-toggle')) {
-            const dropdowns = document.getElementsByClassName('dropdown-menu');
-            for (let i = 0; i < dropdowns.length; i++) {
-                dropdowns[i].style.display = 'none';
-            }
-        }
-    }
-</script>
-
-<script>
-    window.onload = function() {
-        fetch('footer.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('footer-placeholder').innerHTML = data;
-            })
-            .catch(error => console.error('Error loading footer:', error));
-    };
-</script>
+<div id="footer-placeholder" th:replace="fragments/footer :: footer"></div>
 </body>
 </html>

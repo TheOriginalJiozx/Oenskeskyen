@@ -16,35 +16,68 @@ body {
     flex: 1;
 }
 
+/* Custom container styling */
 .container-custom {
-    margin-top: 50px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.container-custom form .form-group,
-.container-custom h1 {
     max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: left;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
 }
 
-.container-custom form button {
-    max-width: 200px;
-    margin-left: calc(50% - 200px);
-    margin-top: 10px;
+.container-custom h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
     text-align: center;
+    margin-bottom: 20px;
 }
 
-.container-custom form .form-control {
-    width: 100%;
+/* Form group styling */
+.form-group {
+    margin-bottom: 15px;
 }
 
-.container-custom form button {
-    display: block;
+.form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-control {
     width: 100%;
-    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    color: #333;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
 }
 
 .container {
@@ -460,24 +493,33 @@ body {
 }
 
 .quantity-controls button {
-    background-color: #e9ecef;
-    border: none;
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 10px 15px;
     border-radius: 0;
-    padding: 0;
-    font-size: 16px;
     cursor: pointer;
-    height: 42px;
-    min-width: 40px;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 .quantity-controls input {
-    width: 60px;
-    text-align: center;
-    border: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 10px 15px;
     border-radius: 0;
-    padding: 0;
-    font-size: 16px;
-    height: 40px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.quantity-input {
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 10px 15px;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 .donation-controls {

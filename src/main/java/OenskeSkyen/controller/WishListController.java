@@ -170,7 +170,7 @@ public class WishListController {
 
     @PostMapping("/wishlist/add")
     @ResponseBody
-    public String addWishListItem(@RequestParam Long itemId, @RequestParam int donationAmount) {
+    public String addWishListItem(@RequestParam Long itemId, @RequestParam int quantity, @RequestParam int donationAmount) {
         Long userId = wishListService.getCurrentUserId();
         if (userId == null) {
             return "Error: User not authenticated.";
@@ -194,15 +194,19 @@ public class WishListController {
 
         boolean success = false;
         String responseMessage;
+        int rowsInserted = 0;
 
         try {
-            int rowsInserted = jdbcTemplate.update(
-                    "INSERT INTO wishlist_items (item_name, item_description, price, user_id, is_reserved) VALUES (?, ?, ?, ?, 0)",
-                    itemToAdd.getItemName(), itemToAdd.getDescription(), itemToAdd.getPrice(), userId
-            );
+
+            for (int i = 0; i < quantity; i++) {
+                rowsInserted += jdbcTemplate.update(
+                        "INSERT INTO wishlist_items (item_name, item_description, price, user_id, is_reserved) VALUES (?, ?, ?, ?, 0)",
+                        itemToAdd.getItemName(), itemToAdd.getDescription(), itemToAdd.getPrice(), userId
+                );
+            }
 
             success = rowsInserted > 0;
-            responseMessage = success ? "Item added to wishlist successfully!" : "Failed to add item to wishlist.";
+            responseMessage = success ? "Item(s) added to wishlist successfully!" : "Failed to add item(s) to wishlist.";
 
             if (donationAmount > 0) {
                 int rowsUpdated = jdbcTemplate.update(

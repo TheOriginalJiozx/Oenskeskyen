@@ -300,7 +300,7 @@ body {
 .navbar-links {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 0;
 }
 
 .nav-link {
@@ -330,6 +330,7 @@ body {
 
 .dropdown-toggle {
     cursor: pointer;
+    padding: 8px 15px;
 }
 
 .dropdown-menu {
@@ -338,6 +339,7 @@ body {
     background-color: white;
     border: 1px solid #ccc;
     z-index: 1000;
+    margin-top: 5px;
 }
 
 .dropdown-toggle-checkbox:checked + .dropdown-toggle + .dropdown-menu {
@@ -357,7 +359,7 @@ body {
 
 .nav-item {
     display: inline-block;
-    margin-right: 10px;
+    margin-right: 0;
 }
 
 .container {

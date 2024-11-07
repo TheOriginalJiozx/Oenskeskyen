@@ -1,4 +1,4 @@
-package OenskeSkyen.controller;
+package OenskeSkyen.service;
 
 import OenskeSkyen.model.User;
 import OenskeSkyen.model.WishListItem;

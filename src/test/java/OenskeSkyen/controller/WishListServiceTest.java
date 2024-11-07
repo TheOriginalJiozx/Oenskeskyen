@@ -1,10 +1,11 @@
-package OenskeSkyen.service;
+package OenskeSkyen.controller;
 
 import OenskeSkyen.model.User;
 import OenskeSkyen.model.WishListItem;
 import OenskeSkyen.model.Category;
 import OenskeSkyen.repository.UserRepository;
 import OenskeSkyen.repository.WishListItemRepository;
+import OenskeSkyen.service.WishListService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

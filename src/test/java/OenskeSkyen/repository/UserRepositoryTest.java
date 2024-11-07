@@ -9,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
-@ActiveProfiles("prod")
+@ActiveProfiles("h2")
 @Repository
 
 public class UserRepositoryTest {
@@ -19,7 +19,7 @@ public class UserRepositoryTest {
 
     @Test
     public void findByUsername() {
-        User user = userRepository.findByUsername("Jiozx");
-        assertEquals("Jiozx", user.getUsername());
+        User user = userRepository.findByUsername("Test");
+        assertEquals("Test", user.getUsername());
     }
 }

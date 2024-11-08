@@ -15,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -283,7 +284,9 @@ public class WishListController {
 
     @PostMapping("/wishlist/share")
     public String shareWishlist(@RequestParam("username") String shareUsername, Model model) {
-        String shareLink = "http://localhost:8080/wishlist/view?user=" + shareUsername;
+        String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        String shareLink = baseUrl + "/wishlist/view?user=" + shareUsername;
+
         model.addAttribute("shareLink", shareLink);
         model.addAttribute("wishlistOwner", shareUsername);
         model.addAttribute("wishListItems", userRepository.getWishListItemsForUser(shareUsername));

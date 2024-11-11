@@ -54,7 +54,6 @@
                     <form th:action="@{/wishlist/add}" method="post">
                         <input type="hidden" name="itemId" th:value="${item.id}" />
 
-                        <!-- Quantity input with controls below label -->
                         <label for="quantity">Quantity:</label><br>
                         <div>
                             <button type="button" class="button" onclick="changeValue('quantity', -1)">-</button>
@@ -62,7 +61,6 @@
                             <button type="button" class="button" onclick="changeValue('quantity', 1)">+</button>
                         </div><br>
 
-                        <!-- Donation Amount input with controls below label -->
                         <label for="donationAmount">Donation Amount (optional):</label><br>
                         <div>
                             <button type="button" class="button" onclick="changeValue('donationAmount', -1)">-</button>

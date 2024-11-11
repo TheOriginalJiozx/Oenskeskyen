@@ -93,7 +93,6 @@ public class WishListController {
 
         Long userId = userRepository.getUserIdByUsername(user);
         if (userId == null) {
-
             return "redirect:/wishlist/view?user=" + authenticatedUsername;
         }
 
@@ -258,7 +257,6 @@ public class WishListController {
         );
 
         if (item == null) {
-
             return "redirect:/wishlist/view?error=itemNotFound";
         }
 

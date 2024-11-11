@@ -44,7 +44,7 @@
         <p th:text="${item.description}"></p>
         <p th:text="${#numbers.formatDecimal(item.price, 0, item.price % 1 == 0 ? 0 : 2) + ' kr.'}"></p>
 
-        <form th:action="@{/wishlist/reserve}" method="post">
+        <form th:action="@{/wishlist/reserve}" method="post" th:if="${username != wishlistOwner}">
             <input type="hidden" name="itemId" th:value="${item.id}" />
             <button type="submit" class="button" th:text="${item.isReserved == 1 ? 'Unreserve' : 'Reserve'}"
                     th:classappend="${item.isReserved == 1 ? 'reserved' : ''}"></button>

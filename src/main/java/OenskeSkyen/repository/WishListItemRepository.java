@@ -53,7 +53,7 @@ public class WishListItemRepository {
     public boolean reserveItem(Long itemId) {
         String sql = "UPDATE wishlist_items SET is_reserved = 1 WHERE id = ?";
         int rowsAffected = jdbcTemplate.update(sql, itemId);
-        System.out.println("Rows affected: " + rowsAffected); // Log the number of affected rows
+        System.out.println("Rows affected: " + rowsAffected);
         return rowsAffected > 0;
     }
 

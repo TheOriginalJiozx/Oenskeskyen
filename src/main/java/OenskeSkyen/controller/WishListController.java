@@ -24,6 +24,8 @@ import java.util.Map;
 @Controller
 @RequestMapping("/")
 public class WishListController {
+
+    // Afhængigheder til service og repository lag, samt JdbcTemplate og password encoder
     private final WishListService wishListService;
     private final JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
@@ -38,41 +40,48 @@ public class WishListController {
         this.userRepository = userRepository;
     }
 
+    // Henter det nuværende autentificerede brugernavn fra sikkerhedskonteksten
     private String getAuthenticatedUsername() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
                 ? auth.getName() : "Guest";
     }
 
+    // Håndterer visning af startsiden
     @GetMapping("/")
     public String showIndexPage(Model model) {
         model.addAttribute("username", getAuthenticatedUsername());
         return "index";
     }
 
+    // Håndterer visning af login-siden
     @GetMapping("/login")
     public String login(Model model) {
         model.addAttribute("username", getAuthenticatedUsername());
         return "login";
     }
 
+    // Håndterer login-funktionaliteten
     @PostMapping("/login")
     public String doLogin(@RequestParam String username, @RequestParam String password) {
-        System.out.println("Attempting login for user: " + username);
+        System.out.println("Forsøger login for bruger: " + username);
         return "redirect:/";
     }
 
+    // Håndterer visning af logout-siden
     @GetMapping("/logout")
     public String logout() {
         return "logout";
     }
 
+    // Håndterer logout-funktionaliteten
     @PostMapping("/logout")
     public String doLogout(@RequestParam String username, @RequestParam String password) {
-        System.out.println("Attempting logout for user: " + username);
+        System.out.println("Forsøger logout for bruger: " + username);
         return "redirect:/";
     }
 
+    // Håndterer visning af startside med brugerens ønskeliste
     @GetMapping("/home")
     public String home(Model model) {
         List<WishListItem> wishListItems = wishListService.getWishListItems();
@@ -80,6 +89,7 @@ public class WishListController {
         return "home";
     }
 
+    // Håndterer visning af en specifik brugers ønskeliste
     @GetMapping("/wishlist/view")
     public String viewWishList(@RequestParam(required = false) String user, Model model) {
         String authenticatedUsername = getAuthenticatedUsername();
@@ -104,16 +114,19 @@ public class WishListController {
         return "view";
     }
 
+    // Håndterer formular til at tilføje et ønskelisteelement
     @GetMapping("wishlist/add")
     public String addWishListItemForm(@RequestParam(required = false) String selectedCategory, Model model) {
         String username = getAuthenticatedUsername();
         model.addAttribute("username", username);
 
+        // Henter brugerens ID fra databasen
         Integer userId = jdbcTemplate.queryForObject("SELECT id FROM wish_users WHERE username = ?", new Object[]{username}, Integer.class);
         model.addAttribute("categories", wishListService.getAllCategories());
 
         List<WishItem> wishItems = List.of();
 
+        // Henter ønskelisteelementer for en valgt kategori
         if (selectedCategory != null && !selectedCategory.isEmpty()) {
             wishItems = jdbcTemplate.query("SELECT * FROM wish_items WHERE category = (SELECT category_name FROM item_categories WHERE category_name = ?)",
                     new Object[]{selectedCategory}, (rs, rowNum) -> {
@@ -130,6 +143,7 @@ public class WishListController {
         return "add";
     }
 
+    // Håndterer visning af elementer baseret på en kategori
     @GetMapping("/wishlist/items")
     public String getItemsByCategory(@RequestParam(required = false) String category, Model model) {
         String sql = "SELECT * FROM wish_items";
@@ -154,6 +168,7 @@ public class WishListController {
         return "add";
     }
 
+    // Returnerer en liste af reserverede elementer som JSON
     @GetMapping("/wishlist/items/reserve")
     @ResponseBody
     public List<WishListItem> getReserveItems(@RequestParam Long userId) {
@@ -172,6 +187,7 @@ public class WishListController {
         );
     }
 
+    // Håndterer tilføjelse af elementer til en ønskeliste
     @PostMapping("/wishlist/add")
     public ModelAndView addWishListItem(@RequestParam Long itemId, @RequestParam int quantity, @RequestParam(required = false, defaultValue = "0") int donationAmount) {
         Long userId = wishListService.getCurrentUserId();
@@ -207,6 +223,7 @@ public class WishListController {
         int rowsInserted = 0;
 
         try {
+            // Tilføjer ønskelisteelementer til databasen
             for (int i = 0; i < quantity; i++) {
                 rowsInserted += jdbcTemplate.update(
                         "INSERT INTO wishlist_items (item_name, item_description, price, user_id, is_reserved) VALUES (?, ?, ?, ?, 0)",
@@ -217,6 +234,7 @@ public class WishListController {
             success = rowsInserted > 0;
             responseMessage = success ? "Item(s) added to wishlist successfully!" : "Failed to add item(s) to wishlist.";
 
+            // Opdaterer donationstælleren, hvis en donation blev givet
             if (donationAmount > 0) {
                 int rowsUpdated = jdbcTemplate.update(
                         "UPDATE wish_users SET times_donated = times_donated + 1 WHERE id = ?",
@@ -224,7 +242,7 @@ public class WishListController {
                 );
 
                 if (rowsUpdated <= 0) {
-                    System.out.println("No update occurred for times_donated for id: " + userId);
+                    System.out.println("Ingen opdatering skete for times_donated for id: " + userId);
                 }
             }
         } catch (Exception e) {
@@ -234,6 +252,7 @@ public class WishListController {
 
         modelAndView.addObject("message", responseMessage);
 
+        // Henter alle kategorier til visning
         List<Category> categories = jdbcTemplate.query(
                 "SELECT id, category_name FROM item_categories",
                 (rs, rowNum) -> new Category(rs.getLong("id"), rs.getString("category_name"))
@@ -243,6 +262,7 @@ public class WishListController {
         return modelAndView;
     }
 
+    // Skifter reserveringsstatus for et ønskelisteelement
     @PostMapping("/wishlist/reserve")
     public String toggleReserveItem(@RequestParam Long itemId) {
         WishListItem item = jdbcTemplate.queryForObject(
@@ -269,6 +289,7 @@ public class WishListController {
         return "redirect:/wishlist/view";
     }
 
+    // Håndterer ophævelse af reservering af et element
     @PostMapping("/wishlist/unreserve")
     @ResponseBody
     public String unreserveItem(@RequestBody Map<String, Long> request) {
@@ -280,6 +301,7 @@ public class WishListController {
         return success ? "Item unreserved successfully" : "Error unreserving item";
     }
 
+    // Håndterer deling af en ønskeliste via en unik URL
     @PostMapping("/wishlist/share")
     public String shareWishlist(@RequestParam("username") String shareUsername, Model model) {
         String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
@@ -292,6 +314,7 @@ public class WishListController {
         return "view";
     }
 
+    // Viser registreringsformular
     @GetMapping("/signup")
     public String showSignupForm(Model model) {
         model.addAttribute("username", getAuthenticatedUsername());
@@ -299,16 +322,17 @@ public class WishListController {
         return "signup";
     }
 
+    // Registrerer en ny bruger
     @PostMapping("/signup")
     public String registerUser(@ModelAttribute User user, Model model) {
         try {
-            System.out.println("Attempting to register user: " + user.getUsername());
+            System.out.println("Forsøger at registrere bruger: " + user.getUsername());
 
             String checkSql = "SELECT COUNT(*) FROM wish_users WHERE username = ?";
             Integer count = jdbcTemplate.queryForObject(checkSql, new Object[]{user.getUsername()}, Integer.class);
 
             if (count != null && count > 0) {
-                model.addAttribute("message", "Username already exists!");
+                model.addAttribute("message", "Brugernavn eksisterer allerede!");
                 return "signup";
             }
 
@@ -318,11 +342,11 @@ public class WishListController {
             String sql = "INSERT INTO wish_users (username, password, enabled) VALUES (?, ?, ?)";
             int rowsAffected = jdbcTemplate.update(sql, user.getUsername(), hashedPassword, user.isEnabled());
 
-            System.out.println("Rows affected: " + rowsAffected);
-            model.addAttribute("message", "User registered successfully!");
+            System.out.println("Rækker påvirket: " + rowsAffected);
+            model.addAttribute("message", "Bruger registreret med succes!");
             return "redirect:/login";
         } catch (Exception e) {
-            model.addAttribute("message", "Error: " + e.getMessage());
+            model.addAttribute("message", "Fejl: " + e.getMessage());
             e.printStackTrace();
         }
         return "signup";
